@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
-import { useEffect, useState } from "react";
-import { auth } from "./firebase";
+import { isAdmin } from "./services/auth";
 
 /* PAGES */
 import Home from "./pages/Home";
@@ -14,29 +12,9 @@ import AdminDashboard from "./pages/AdminDashboard";
    PROTECTED ADMIN ROUTE
 ========================= */
 function AdminRoute({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => {
-      setUser(u);
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-blue-950 flex items-center justify-center text-white">
-        Loading...
-      </div>
-    );
-  }
-
-  if (!user) {
+  if (!isAdmin()) {
     return <Navigate to="/admin" replace />;
   }
-
   return children;
 }
 

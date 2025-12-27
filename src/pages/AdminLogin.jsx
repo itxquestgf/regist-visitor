@@ -1,43 +1,41 @@
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../services/auth";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
-  const nav = useNavigate();
+  const [pin, setPin] = useState("");
+  const navigate = useNavigate();
 
-  async function login() {
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      nav("/admin/dashboard");
-    } catch {
-      alert("Login gagal");
-    }
+  async function submit() {
+    if (pin.length !== 4) return alert("PIN harus 4 digit");
+
+    const ok = await login(pin);
+    if (!ok) return alert("PIN salah");
+
+    navigate("/admin/dashboard");
   }
 
   return (
     <div className="min-h-screen bg-blue-950 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-xl w-80 space-y-3">
-        <h1 className="font-bold text-blue-950 text-center">
-          Admin Login
+      <div className="bg-white p-6 rounded-xl w-72 space-y-4">
+        <h1 className="text-xl font-bold text-center text-blue-950">
+          Admin PIN
         </h1>
 
         <input
-          placeholder="Email"
-          onChange={e => setEmail(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-        <input
           type="password"
-          placeholder="Password"
-          onChange={e => setPass(e.target.value)}
-          className="w-full p-2 border rounded"
+          inputMode="numeric"
+          maxLength={4}
+          className="w-full p-3 text-center tracking-widest border rounded"
+          placeholder="••••"
+          value={pin}
+          onChange={e =>
+            setPin(e.target.value.replace(/\D/g, ""))
+          }
         />
 
         <button
-          onClick={login}
+          onClick={submit}
           className="w-full bg-blue-950 text-yellow-300 py-2 rounded font-bold"
         >
           Masuk
