@@ -1,30 +1,33 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ref, push, onValue } from "firebase/database";
+import { ref, push, onValue, off } from "firebase/database";
 import { db } from "../firebase";
 import { FaWhatsapp } from "react-icons/fa";
 
-const ADMIN_WA = "628131073719"; // GANTI NO ADMIN
+const ADMIN_WA = "628131073719";
 
 export default function BatchForm() {
   const { date, batch } = useParams();
   const [used, setUsed] = useState({ 1: 0, 2: 0, 3: 0 });
 
-  function loadUsed() {
-    const visitsRef = ref(db, "registrations");
-    onValue(visitsRef, snapshot => {
+  useEffect(() => {
+    const visitsRef = ref(db, "visits");
+
+    const unsub = onValue(visitsRef, snapshot => {
       const all = snapshot.val() || {};
       const temp = { 1: 0, 2: 0, 3: 0 };
+
       Object.values(all).forEach(d => {
-        if (d.date === date && d.batch === Number(batch)) temp[d.group] += d.count;
+        if (d.date === date && d.batch === Number(batch)) {
+          temp[d.group] += d.count;
+        }
       });
+
       setUsed(temp);
     });
-  }
 
-  useEffect(() => {
-    loadUsed();
-  }, []);
+    return () => off(visitsRef);
+  }, [date, batch]);
 
   return (
     <div className="min-h-screen bg-blue-950 p-6 text-white space-y-6 relative">
@@ -32,22 +35,13 @@ export default function BatchForm() {
         {date} — Batch {batch}
       </h1>
 
-      <div className="bg-yellow-100 text-blue-950 p-4 rounded-xl flex items-start gap-3">
-        <FaWhatsapp className="text-green-600 mt-1" size={28} />
+      <div className="bg-yellow-100 text-blue-950 p-4 rounded-xl flex gap-3">
+        <FaWhatsapp size={28} className="text-green-600 mt-1" />
         <div>
           <p className="font-bold">Mengalami kendala pendaftaran?</p>
           <p className="text-sm">
-            Jika data tidak tersimpan, kuota tidak sesuai, atau ada error,
-            silakan hubungi admin melalui WhatsApp.
+            Jika data tidak tersimpan atau kuota tidak sesuai, hubungi admin.
           </p>
-          <a
-            href={`https://wa.me/${ADMIN_WA}?text=Halo%20Admin,%20saya%20mengalami%20kendala%20pendaftaran%20pada%20tanggal%20${date}%20batch%20${batch}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block mt-2 text-green-700 font-bold underline"
-          >
-            Hubungi Admin via WhatsApp
-          </a>
         </div>
       </div>
 
@@ -58,24 +52,13 @@ export default function BatchForm() {
           batch={Number(batch)}
           group={group}
           used={used[group]}
-          reload={loadUsed}
         />
       ))}
-
-      <a
-        href={`https://wa.me/${ADMIN_WA}?text=Halo%20Admin,%20saya%20butuh%20bantuan%20pendaftaran%20tanggal%20${date}%20batch%20${batch}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600
-                   text-white p-4 rounded-full shadow-lg z-50"
-      >
-        <FaWhatsapp size={28} />
-      </a>
     </div>
   );
 }
 
-function GroupForm({ date, batch, group, used, reload }) {
+function GroupForm({ date, batch, group, used }) {
   const remaining = 18 - used;
   const [count, setCount] = useState(1);
   const [names, setNames] = useState([""]);
@@ -89,7 +72,7 @@ function GroupForm({ date, batch, group, used, reload }) {
     );
   }
 
-  async function submit() {
+  function submit() {
     if (names.length !== count || names.some(n => !n)) {
       alert("Nama peserta belum lengkap");
       return;
@@ -99,20 +82,22 @@ function GroupForm({ date, batch, group, used, reload }) {
       return;
     }
 
-    const visitsRef = ref(db, "registrations");
-    const newVisit = {
+    const visitsRef = ref(db, "visits");
+
+    push(visitsRef, {
       date,
       batch,
       group,
       count,
       pic_phone: phone,
-      participants: names.map((n, i) => ({ name: n, is_pic: i === 0 })),
+      participants: names.map((n, i) => ({
+        name: n,
+        is_pic: i === 0,
+      })),
       createdAt: Date.now(),
-    };
+    });
 
-    push(visitsRef, newVisit);
     alert("Pendaftaran berhasil");
-    reload();
     setNames([""]);
     setPhone("");
   }
@@ -126,16 +111,14 @@ function GroupForm({ date, batch, group, used, reload }) {
       <select
         value={count}
         onChange={e => {
-          const val = Number(e.target.value);
-          setCount(val);
-          setNames(Array(val).fill(""));
+          const v = Number(e.target.value);
+          setCount(v);
+          setNames(Array(v).fill(""));
         }}
         className="w-full p-2 border rounded"
       >
         {Array.from({ length: remaining }, (_, i) => i + 1).map(v => (
-          <option key={v} value={v}>
-            {v} Orang
-          </option>
+          <option key={v} value={v}>{v} Orang</option>
         ))}
       </select>
 
@@ -161,7 +144,6 @@ function GroupForm({ date, batch, group, used, reload }) {
       />
 
       <button
-        type="button"
         onClick={submit}
         className="w-full bg-blue-950 text-yellow-300 py-2 rounded font-bold"
       >
