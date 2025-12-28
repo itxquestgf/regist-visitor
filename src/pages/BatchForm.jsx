@@ -10,23 +10,30 @@ export default function BatchForm() {
   const { date, batch } = useParams();
   const [used, setUsed] = useState({ 1: 0, 2: 0, 3: 0 });
 
+  /* =========================
+     LOAD USED QUOTA (REALTIME)
+  ========================= */
   useEffect(() => {
-    const visitsRef = ref(db, "visits");
+    const regRef = ref(db, "registrations");
 
-    const unsub = onValue(visitsRef, snapshot => {
+    const unsub = onValue(regRef, snapshot => {
       const all = snapshot.val() || {};
       const temp = { 1: 0, 2: 0, 3: 0 };
 
       Object.values(all).forEach(d => {
-        if (d.date === date && d.batch === Number(batch)) {
-          temp[d.group] += d.count;
+        if (
+          d.date === date &&
+          d.batch === Number(batch) &&
+          temp[d.group] !== undefined
+        ) {
+          temp[d.group] += Number(d.count || 0);
         }
       });
 
       setUsed(temp);
     });
 
-    return () => off(visitsRef);
+    return () => off(regRef);
   }, [date, batch]);
 
   return (
@@ -35,6 +42,7 @@ export default function BatchForm() {
         {date} — Batch {batch}
       </h1>
 
+      {/* INFO ADMIN */}
       <div className="bg-yellow-100 text-blue-950 p-4 rounded-xl flex gap-3">
         <FaWhatsapp size={28} className="text-green-600 mt-1" />
         <div>
@@ -58,6 +66,9 @@ export default function BatchForm() {
   );
 }
 
+/* =========================
+   GROUP FORM
+========================= */
 function GroupForm({ date, batch, group, used }) {
   const remaining = 18 - used;
   const [count, setCount] = useState(1);
@@ -73,25 +84,25 @@ function GroupForm({ date, batch, group, used }) {
   }
 
   function submit() {
-    if (names.length !== count || names.some(n => !n)) {
+    if (names.length !== count || names.some(n => !n.trim())) {
       alert("Nama peserta belum lengkap");
       return;
     }
-    if (!phone) {
+    if (!phone.trim()) {
       alert("No WhatsApp PIC wajib diisi");
       return;
     }
 
-    const visitsRef = ref(db, "visits");
+    const regRef = ref(db, "registrations");
 
-    push(visitsRef, {
+    push(regRef, {
       date,
       batch,
       group,
       count,
       pic_phone: phone,
       participants: names.map((n, i) => ({
-        name: n,
+        name: n.trim(),
         is_pic: i === 0,
       })),
       createdAt: Date.now(),
@@ -118,7 +129,9 @@ function GroupForm({ date, batch, group, used }) {
         className="w-full p-2 border rounded"
       >
         {Array.from({ length: remaining }, (_, i) => i + 1).map(v => (
-          <option key={v} value={v}>{v} Orang</option>
+          <option key={v} value={v}>
+            {v} Orang
+          </option>
         ))}
       </select>
 

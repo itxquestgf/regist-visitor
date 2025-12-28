@@ -1,21 +1,140 @@
 {
-  "admins": {
-    "1234": true
-  },
   "registrations": {
-    "-OhYBc1ccQoUBkA87MJ_": {
-      "batch": 1,
-      "count": 1,
-      "createdAt": 1766895812993,
+    "-REG001": {
       "date": "2025-12-28",
+      "batch": 1,
       "group": 1,
+      "count": 5,
+      "pic_phone": "628111111111",
       "participants": [
-        {
-          "name": "Nama PIC",
-          "is_pic": true
-        }
+        { "name": "Andi", "is_pic": true },
+        { "name": "Budi", "is_pic": false },
+        { "name": "Citra", "is_pic": false },
+        { "name": "Dewi", "is_pic": false },
+        { "name": "Eko", "is_pic": false }
       ],
-      "pic_phone": "123"
+      "createdAt": 1766892000000
+    },
+
+    "-REG002": {
+      "date": "2025-12-28",
+      "batch": 1,
+      "group": 2,
+      "count": 3,
+      "pic_phone": "628122222222",
+      "participants": [
+        { "name": "Fajar", "is_pic": true },
+        { "name": "Gilang", "is_pic": false },
+        { "name": "Hana", "is_pic": false }
+      ],
+      "createdAt": 1766892300000
+    },
+
+    "-REG003": {
+      "date": "2025-12-28",
+      "batch": 1,
+      "group": 3,
+      "count": 4,
+      "pic_phone": "628133333333",
+      "participants": [
+        { "name": "Irfan", "is_pic": true },
+        { "name": "Joko", "is_pic": false },
+        { "name": "Kiki", "is_pic": false },
+        { "name": "Lina", "is_pic": false }
+      ],
+      "createdAt": 1766892600000
+    },
+
+    "-REG004": {
+      "date": "2025-12-28",
+      "batch": 2,
+      "group": 1,
+      "count": 6,
+      "pic_phone": "628144444444",
+      "participants": [
+        { "name": "Maya", "is_pic": true },
+        { "name": "Nando", "is_pic": false },
+        { "name": "Oki", "is_pic": false },
+        { "name": "Putri", "is_pic": false },
+        { "name": "Raka", "is_pic": false },
+        { "name": "Sari", "is_pic": false }
+      ],
+      "createdAt": 1766893000000
+    },
+
+    "-REG005": {
+      "date": "2025-12-28",
+      "batch": 2,
+      "group": 2,
+      "count": 2,
+      "pic_phone": "628155555555",
+      "participants": [
+        { "name": "Tono", "is_pic": true },
+        { "name": "Umar", "is_pic": false }
+      ],
+      "createdAt": 1766893300000
+    },
+
+    "-REG006": {
+      "date": "2025-12-28",
+      "batch": 2,
+      "group": 3,
+      "count": 5,
+      "pic_phone": "628166666666",
+      "participants": [
+        { "name": "Vina", "is_pic": true },
+        { "name": "Wawan", "is_pic": false },
+        { "name": "Xenia", "is_pic": false },
+        { "name": "Yoga", "is_pic": false },
+        { "name": "Zahra", "is_pic": false }
+      ],
+      "createdAt": 1766893600000
+    },
+
+    "-REG007": {
+      "date": "2025-12-28",
+      "batch": 3,
+      "group": 1,
+      "count": 4,
+      "pic_phone": "628177777777",
+      "participants": [
+        { "name": "Aldi", "is_pic": true },
+        { "name": "Bella", "is_pic": false },
+        { "name": "Chandra", "is_pic": false },
+        { "name": "Dina", "is_pic": false }
+      ],
+      "createdAt": 1766893900000
+    },
+
+    "-REG008": {
+      "date": "2025-12-28",
+      "batch": 3,
+      "group": 2,
+      "count": 3,
+      "pic_phone": "628188888888",
+      "participants": [
+        { "name": "Evan", "is_pic": true },
+        { "name": "Farah", "is_pic": false },
+        { "name": "Gita", "is_pic": false }
+      ],
+      "createdAt": 1766894200000
+    },
+
+    "-REG009": {
+      "date": "2025-12-28",
+      "batch": 3,
+      "group": 3,
+      "count": 6,
+      "pic_phone": "628199999999",
+      "participants": [
+        { "name": "Hadi", "is_pic": true },
+        { "name": "Indah", "is_pic": false },
+        { "name": "Jihan", "is_pic": false },
+        { "name": "Kevin", "is_pic": false },
+        { "name": "Lukman", "is_pic": false },
+        { "name": "Mira", "is_pic": false }
+      ],
+      "createdAt": 1766894500000
     }
   }
 }
