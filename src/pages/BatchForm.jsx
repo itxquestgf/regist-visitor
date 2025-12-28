@@ -4,29 +4,20 @@ import { ref, push, onValue, off } from "firebase/database";
 import { db } from "../firebase";
 import { FaWhatsapp } from "react-icons/fa";
 
-const ADMIN_WA = "628131073719";
-
 export default function BatchForm() {
   const { date, batch } = useParams();
   const [used, setUsed] = useState({ 1: 0, 2: 0, 3: 0 });
 
-  /* =========================
-     LOAD USED QUOTA (REALTIME)
-  ========================= */
   useEffect(() => {
     const regRef = ref(db, "registrations");
 
-    const unsub = onValue(regRef, snapshot => {
-      const all = snapshot.val() || {};
+    const unsub = onValue(regRef, snap => {
+      const all = snap.val() || {};
       const temp = { 1: 0, 2: 0, 3: 0 };
 
       Object.values(all).forEach(d => {
-        if (
-          d.date === date &&
-          d.batch === Number(batch) &&
-          temp[d.group] !== undefined
-        ) {
-          temp[d.group] += Number(d.count || 0);
+        if (d.date === date && d.batch === Number(batch)) {
+          temp[d.group] += d.count;
         }
       });
 
@@ -37,21 +28,10 @@ export default function BatchForm() {
   }, [date, batch]);
 
   return (
-    <div className="min-h-screen bg-blue-950 p-6 text-white space-y-6 relative">
+    <div className="min-h-screen bg-blue-950 p-6 text-white space-y-6">
       <h1 className="text-xl font-bold">
         {date} — Batch {batch}
       </h1>
-
-      {/* INFO ADMIN */}
-      <div className="bg-yellow-100 text-blue-950 p-4 rounded-xl flex gap-3">
-        <FaWhatsapp size={28} className="text-green-600 mt-1" />
-        <div>
-          <p className="font-bold">Mengalami kendala pendaftaran?</p>
-          <p className="text-sm">
-            Jika data tidak tersimpan atau kuota tidak sesuai, hubungi admin.
-          </p>
-        </div>
-      </div>
 
       {[1, 2, 3].map(group => (
         <GroupForm
@@ -66,9 +46,6 @@ export default function BatchForm() {
   );
 }
 
-/* =========================
-   GROUP FORM
-========================= */
 function GroupForm({ date, batch, group, used }) {
   const remaining = 18 - used;
   const [count, setCount] = useState(1);
@@ -84,25 +61,23 @@ function GroupForm({ date, batch, group, used }) {
   }
 
   function submit() {
-    if (names.length !== count || names.some(n => !n.trim())) {
+    if (names.length !== count || names.some(n => !n)) {
       alert("Nama peserta belum lengkap");
       return;
     }
-    if (!phone.trim()) {
+    if (!phone) {
       alert("No WhatsApp PIC wajib diisi");
       return;
     }
 
-    const regRef = ref(db, "registrations");
-
-    push(regRef, {
+    push(ref(db, "registrations"), {
       date,
       batch,
       group,
       count,
       pic_phone: phone,
       participants: names.map((n, i) => ({
-        name: n.trim(),
+        name: n,
         is_pic: i === 0,
       })),
       createdAt: Date.now(),
@@ -129,17 +104,15 @@ function GroupForm({ date, batch, group, used }) {
         className="w-full p-2 border rounded"
       >
         {Array.from({ length: remaining }, (_, i) => i + 1).map(v => (
-          <option key={v} value={v}>
-            {v} Orang
-          </option>
+          <option key={v} value={v}>{v} Orang</option>
         ))}
       </select>
 
       {names.map((n, i) => (
         <input
           key={i}
-          placeholder={i === 0 ? "Nama PIC" : `Nama Peserta ${i + 1}`}
           value={n}
+          placeholder={i === 0 ? "Nama PIC" : `Nama Peserta ${i + 1}`}
           onChange={e => {
             const copy = [...names];
             copy[i] = e.target.value;
@@ -150,8 +123,8 @@ function GroupForm({ date, batch, group, used }) {
       ))}
 
       <input
-        placeholder="No WhatsApp PIC"
         value={phone}
+        placeholder="No WhatsApp PIC"
         onChange={e => setPhone(e.target.value)}
         className="w-full p-2 border rounded"
       />
