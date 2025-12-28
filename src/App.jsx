@@ -38,13 +38,10 @@ export default function App() {
         {/* ADMIN */}
         <Route path="/admin" element={<AdminLogin />} />
         <Route
-          path="/admin/dashboard"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
+  path="/admin/dashboard"
+  element={<AdminDashboard />}
+/>
+
 
         {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" replace />} />
