@@ -1,37 +1,25 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { ref, push, onValue } from "firebase/database";
 import { db } from "../firebase";
 import { FaWhatsapp } from "react-icons/fa";
 
-const ADMIN_WA = "628131073719"; // GANTI DENGAN NO ADMIN
+const ADMIN_WA = "628131073719"; // GANTI NO ADMIN
 
 export default function BatchForm() {
   const { date, batch } = useParams();
   const [used, setUsed] = useState({ 1: 0, 2: 0, 3: 0 });
 
-  async function loadUsed() {
-    const q = query(
-      collection(db, "registrations"),
-      where("date", "==", date),
-      where("batch", "==", Number(batch))
-    );
-
-    const snap = await getDocs(q);
-    const temp = { 1: 0, 2: 0, 3: 0 };
-
-    snap.forEach(d => {
-      const data = d.data();
-      temp[data.group] += data.count;
+  function loadUsed() {
+    const visitsRef = ref(db, "registrations");
+    onValue(visitsRef, snapshot => {
+      const all = snapshot.val() || {};
+      const temp = { 1: 0, 2: 0, 3: 0 };
+      Object.values(all).forEach(d => {
+        if (d.date === date && d.batch === Number(batch)) temp[d.group] += d.count;
+      });
+      setUsed(temp);
     });
-
-    setUsed(temp);
   }
 
   useEffect(() => {
@@ -44,7 +32,6 @@ export default function BatchForm() {
         {date} — Batch {batch}
       </h1>
 
-      {/* INFO HUBUNGI ADMIN */}
       <div className="bg-yellow-100 text-blue-950 p-4 rounded-xl flex items-start gap-3">
         <FaWhatsapp className="text-green-600 mt-1" size={28} />
         <div>
@@ -75,7 +62,6 @@ export default function BatchForm() {
         />
       ))}
 
-      {/* FLOATING WHATSAPP BUTTON */}
       <a
         href={`https://wa.me/${ADMIN_WA}?text=Halo%20Admin,%20saya%20butuh%20bantuan%20pendaftaran%20tanggal%20${date}%20batch%20${batch}`}
         target="_blank"
@@ -104,38 +90,31 @@ function GroupForm({ date, batch, group, used, reload }) {
   }
 
   async function submit() {
-    try {
-      if (names.length !== count || names.some(n => !n)) {
-        alert("Nama peserta belum lengkap");
-        return;
-      }
-
-      if (!phone) {
-        alert("No WhatsApp PIC wajib diisi");
-        return;
-      }
-
-      await addDoc(collection(db, "registrations"), {
-        date,
-        batch,
-        group,
-        count,
-        pic_phone: phone,
-        participants: names.map((n, i) => ({
-          name: n,
-          is_pic: i === 0,
-        })),
-        createdAt: new Date(),
-      });
-
-      alert("Pendaftaran berhasil");
-      reload();
-      setNames([""]);
-      setPhone("");
-    } catch (err) {
-      console.error("SUBMIT ERROR:", err);
-      alert("Gagal menyimpan data, silakan hubungi admin");
+    if (names.length !== count || names.some(n => !n)) {
+      alert("Nama peserta belum lengkap");
+      return;
     }
+    if (!phone) {
+      alert("No WhatsApp PIC wajib diisi");
+      return;
+    }
+
+    const visitsRef = ref(db, "registrations");
+    const newVisit = {
+      date,
+      batch,
+      group,
+      count,
+      pic_phone: phone,
+      participants: names.map((n, i) => ({ name: n, is_pic: i === 0 })),
+      createdAt: Date.now(),
+    };
+
+    push(visitsRef, newVisit);
+    alert("Pendaftaran berhasil");
+    reload();
+    setNames([""]);
+    setPhone("");
   }
 
   return (

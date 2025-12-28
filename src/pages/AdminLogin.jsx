@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../services/auth";
+import { db } from "../firebase";
+import { ref, get } from "firebase/database";
 
 export default function AdminLogin() {
   const [pin, setPin] = useState("");
@@ -9,10 +10,18 @@ export default function AdminLogin() {
   async function submit() {
     if (pin.length !== 4) return alert("PIN harus 4 digit");
 
-    const ok = await login(pin);
-    if (!ok) return alert("PIN salah");
+    try {
+      const snap = await get(ref(db, `admins/${pin}`));
+      if (!snap.exists()) return alert("PIN salah");
 
-    navigate("/admin/dashboard");
+      // Simpan session sederhana (misal di localStorage)
+      localStorage.setItem("admin_pin", pin);
+
+      navigate("/admin/dashboard");
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi error, coba lagi");
+    }
   }
 
   return (
