@@ -5,20 +5,17 @@ import { logout } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 
 /* =======================
-   EXPORT EXCEL HELPER
+   EXPORT CSV HELPER
 ======================= */
 function downloadByDate(date, records) {
   let rows = [];
 
-  // HEADER ROW
   rows.push(["Tanggal", date]);
   rows.push([]);
 
-  // BATCH 1–3
   for (let batch = 1; batch <= 3; batch++) {
     rows.push([`Batch ${batch}`]);
 
-    // GROUP 1–3
     for (let group = 1; group <= 3; group++) {
       rows.push([`Group ${group}`]);
 
@@ -55,10 +52,11 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  /* ===== LOAD REALTIME DATA (STABIL) ===== */
+  /* ===== LOAD REALTIME (REGISTRATIONS) ===== */
   useEffect(() => {
-    const visitsRef = ref(db, "visits");
-    const unsub = onValue(visitsRef, snap => {
+    const regRef = ref(db, "registrations");
+
+    const unsub = onValue(regRef, snap => {
       const val = snap.val() || {};
 
       const arr = Object.entries(val).map(([id, v]) => ({
@@ -69,7 +67,6 @@ export default function AdminDashboard() {
           : Object.values(v.participants || {})
       }));
 
-      // SORT WAJIB (ANTI TIDAK SINKRON)
       arr.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         if (a.batch !== b.batch) return a.batch - b.batch;
@@ -85,7 +82,7 @@ export default function AdminDashboard() {
   /* ===== DELETE ===== */
   function handleDelete(id) {
     if (!confirm("Hapus data ini?")) return;
-    remove(ref(db, `visits/${id}`));
+    remove(ref(db, `registrations/${id}`));
   }
 
   function handleLogout() {
@@ -114,9 +111,6 @@ export default function AdminDashboard() {
     return acc;
   }, {});
 
-  /* =======================
-     UI
-  ======================= */
   return (
     <div className="min-h-screen bg-blue-950 p-6 text-white">
       <div className="flex justify-between mb-4">
@@ -147,7 +141,6 @@ export default function AdminDashboard() {
 
       {Object.entries(grouped).map(([date, items]) => (
         <div key={date} className="mb-10">
-          {/* DATE HEADER */}
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-xl font-bold text-yellow-300">
               {date}
@@ -161,7 +154,6 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          {/* DATA */}
           {items.map(d => (
             <div
               key={d.id}
