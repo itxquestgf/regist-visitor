@@ -1,25 +1,19 @@
-import { doc, getDoc } from "firebase/firestore";
+import { ref, get } from "firebase/database";
 import { db } from "../firebase";
 
-const KEY = "admin_pin_auth";
-
 export async function login(pin) {
-  const ref = doc(db, "admins", "main");
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) return false;
-
-  if (snap.data().pin === pin) {
-    localStorage.setItem(KEY, "true");
+  const snap = await get(ref(db, `admins/${pin}`));
+  if (snap.exists()) {
+    localStorage.setItem("admin", "true");
     return true;
   }
   return false;
 }
 
 export function logout() {
-  localStorage.removeItem(KEY);
+  localStorage.removeItem("admin");
 }
 
 export function isAdmin() {
-  return localStorage.getItem(KEY) === "true";
+  return localStorage.getItem("admin") === "true";
 }
