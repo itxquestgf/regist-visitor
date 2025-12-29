@@ -14,7 +14,11 @@ export default function AdminJadwal() {
   }, []);
 
   function addDate() {
-    if (!newDate) return;
+    if (!newDate) {
+      alert("Pilih tanggal terlebih dahulu");
+      return;
+    }
+
     set(ref(db, `jadwal/${newDate}`), true);
     setNewDate("");
   }
@@ -26,35 +30,61 @@ export default function AdminJadwal() {
 
   return (
     <div className="min-h-screen bg-blue-950 p-6 text-white">
-      <h1 className="text-2xl font-bold text-yellow-300 mb-4">
+      <h1 className="text-2xl font-bold text-yellow-300 mb-6">
         Atur Jadwal Manual
       </h1>
 
       {/* ADD DATE */}
-      <div className="flex gap-2 mb-6">
-        <input
-          type="date"
-          value={newDate}
-          onChange={e => setNewDate(e.target.value)}
-          className="p-2 rounded text-blue-950"
-        />
+      <div className="space-y-4 mb-10">
+        <div className="relative">
+          <input
+            type="date"
+            value={newDate}
+            onChange={e => setNewDate(e.target.value)}
+            className="
+              w-full p-3 pr-10 rounded
+              bg-blue-950 text-white
+              border-2 border-yellow-400
+              placeholder-gray-300
+              focus:outline-none
+              focus:ring-2 focus:ring-yellow-400
+              date-yellow
+            "
+          />
+
+          {/* ICON KALENDER */}
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-400 pointer-events-none">
+            📅
+          </span>
+        </div>
+
         <button
           onClick={addDate}
-          className="bg-yellow-400 text-blue-950 px-4 rounded font-bold"
+          className="
+            w-full bg-yellow-400 text-blue-950
+            font-bold py-3 rounded
+            hover:bg-yellow-300 transition
+          "
         >
-          Tambah
+          ➕ Tambahkan Jadwal
         </button>
       </div>
 
       {/* LIST DATE */}
-      {Object.keys(dates).length === 0 && <p>Belum ada jadwal</p>}
+      {Object.keys(dates).length === 0 && (
+        <p className="text-gray-300">Belum ada jadwal</p>
+      )}
 
       {Object.keys(dates)
         .sort()
         .map(date => (
           <div
             key={date}
-            className="bg-white text-blue-950 p-3 rounded mb-2 flex justify-between items-center"
+            className="
+              bg-white text-blue-950
+              p-3 rounded mb-3
+              flex justify-between items-center
+            "
           >
             <span className="font-bold">{date}</span>
             <button

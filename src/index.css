@@ -1,1 +1,10 @@
 @import "tailwindcss";
+/* === DATE INPUT COLOR FIX === */
+.date-yellow::-webkit-calendar-picker-indicator {
+  filter: invert(78%) sepia(95%) saturate(600%) hue-rotate(360deg);
+  cursor: pointer;
+}
+
+.date-yellow {
+  color-scheme: dark;
+}
