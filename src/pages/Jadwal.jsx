@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Logo from "../components/Logo";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaWhatsapp, FaClock } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { db } from "../firebase";
@@ -21,8 +21,8 @@ const BATCHES = [
 export default function Jadwal() {
   const navigate = useNavigate();
 
-  const [dates, setDates] = useState([]);          // ← dari firebase jadwal
-  const [visits, setVisits] = useState({});        // ← dari registrations
+  const [dates, setDates] = useState([]);
+  const [visits, setVisits] = useState({});
 
   /* =======================
      LOAD JADWAL MANUAL
@@ -32,8 +32,7 @@ export default function Jadwal() {
 
     return onValue(jadwalRef, snap => {
       const val = snap.val() || {};
-      const list = Object.keys(val).sort(); // sort tanggal
-      setDates(list);
+      setDates(Object.keys(val).sort());
     });
   }, []);
 
@@ -74,16 +73,17 @@ export default function Jadwal() {
      UI
   ======================= */
   return (
-    <div className="min-h-screen bg-blue-950 p-6 text-white space-y-6 relative">
-      <div className="flex justify-center">
+    <div className="min-h-screen bg-blue-950 px-4 py-6 text-white relative">
+      {/* LOGO */}
+      <div className="flex justify-center mb-6">
         <Logo />
       </div>
 
       {/* INFO ADMIN */}
-      <div className="bg-yellow-100 text-blue-950 p-4 rounded-xl flex items-start gap-3">
+      <div className="max-w-xl mx-auto bg-yellow-100 text-blue-950 p-4 rounded-2xl flex gap-3 shadow mb-8">
         <FaWhatsapp className="text-green-600 mt-1" size={28} />
         <div>
-          <p className="font-bold">Butuh bantuan atau informasi?</p>
+          <p className="font-bold">Butuh bantuan?</p>
           <p className="text-sm">
             Jika jadwal penuh atau batch tidak bisa dipilih,
             silakan hubungi admin.
@@ -92,7 +92,7 @@ export default function Jadwal() {
             href={`https://wa.me/${ADMIN_WA}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block mt-2 text-green-700 font-bold underline"
+            className="inline-block mt-2 font-bold text-green-700 underline"
           >
             Hubungi Admin via WhatsApp
           </a>
@@ -100,48 +100,62 @@ export default function Jadwal() {
       </div>
 
       {/* JADWAL */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
         {dates.map(date => {
           const dayFull = isDayFull(date);
 
           return (
             <div
               key={date}
-              className="bg-white text-blue-950 rounded-xl p-4 space-y-3"
+              className="bg-white text-blue-950 rounded-2xl p-5 shadow-lg space-y-4"
             >
-              <h2 className="font-bold text-lg text-center">
-                {date}
+              {/* DATE */}
+              <div className="text-center">
+                <h2 className="font-bold text-lg">{date}</h2>
                 {dayFull && (
-                  <span className="block text-sm text-red-600">
-                    (PENUH)
+                  <span className="text-sm text-red-600 font-semibold">
+                    PENUH
                   </span>
                 )}
-              </h2>
+              </div>
 
-              {BATCHES.map(b => {
-                const full = isBatchFull(date, b.id);
+              {/* BATCHES */}
+              <div className="space-y-2">
+                {BATCHES.map(b => {
+                  const full = isBatchFull(date, b.id);
 
-                return (
-                  <button
-                    key={b.id}
-                    disabled={full}
-                    onClick={() =>
-                      !full && navigate(`/batch/${date}/${b.id}`)
-                    }
-                    className={`w-full border rounded-lg p-2 text-sm mb-1 transition
-                      ${
-                        full
-                          ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                          : "hover:bg-blue-950 hover:text-yellow-300"
-                      }`}
-                  >
-                    Batch {b.id}
-                    <br />
-                    <span className="text-xs">{b.time}</span>
-                    {full && " — PENUH"}
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={b.id}
+                      disabled={full}
+                      onClick={() =>
+                        !full && navigate(`/batch/${date}/${b.id}`)
+                      }
+                      className={`
+                        w-full p-3 rounded-xl border text-sm text-left
+                        transition flex justify-between items-center
+                        ${
+                          full
+                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                            : "hover:bg-blue-950 hover:text-yellow-300"
+                        }
+                      `}
+                    >
+                      <div>
+                        <p className="font-bold">Batch {b.id}</p>
+                        <p className="text-xs flex items-center gap-1">
+                          <FaClock /> {b.time}
+                        </p>
+                      </div>
+                      {full && (
+                        <span className="text-xs font-bold text-red-600">
+                          PENUH
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
@@ -152,8 +166,11 @@ export default function Jadwal() {
         href={`https://wa.me/${ADMIN_WA}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600
-                   text-white p-4 rounded-full shadow-lg z-50"
+        className="
+          fixed bottom-6 right-6
+          bg-green-500 hover:bg-green-600
+          text-white p-4 rounded-full shadow-xl z-50
+        "
       >
         <FaWhatsapp size={28} />
       </a>

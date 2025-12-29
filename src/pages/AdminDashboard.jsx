@@ -5,33 +5,54 @@ import { logout } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 
 /* =======================
-   EXPORT CSV HELPER
+   EXPORT CSV (HORIZONTAL)
 ======================= */
 function downloadByDate(date, records) {
-  let rows = [];
+  // BATCH 1–5, GROUP 1–3
+  const batches = [1, 2, 3, 4, 5];
+  const groups = [1, 2, 3];
 
-  rows.push(["Tanggal", date]);
-  rows.push([]);
+  // Susun kolom: Batch x Group
+  const columns = [];
+  batches.forEach(b =>
+    groups.forEach(g =>
+      columns.push({ batch: b, group: g })
+    )
+  );
 
-  for (let batch = 1; batch <= 3; batch++) {
-    rows.push([`Batch ${batch}`]);
+  const rows = [];
 
-    for (let group = 1; group <= 3; group++) {
-      rows.push([`Group ${group}`]);
+  // ROW 1 → TANGGAL
+  rows.push([date]);
 
-      records
-        .filter(r => r.batch === batch && r.group === group)
-        .forEach(r => {
-          r.participants.forEach(p => {
-            rows.push(["", "", p.name]);
-          });
-        });
+  // ROW 2 → BATCH
+  rows.push(
+    columns.map(c => `Batch ${c.batch}`)
+  );
 
-      rows.push([]);
-    }
-    rows.push([]);
+  // ROW 3 → GROUP
+  rows.push(
+    columns.map(c => `Group ${c.group}`)
+  );
+
+  // Ambil peserta per kolom
+  const colParticipants = columns.map(c => {
+    return records
+      .filter(r => r.batch === c.batch && r.group === c.group)
+      .flatMap(r => r.participants.map(p => p.name));
+  });
+
+  // Cari jumlah baris terbanyak
+  const maxLen = Math.max(...colParticipants.map(c => c.length), 0);
+
+  // ROW 4+ → PESERTA
+  for (let i = 0; i < maxLen; i++) {
+    rows.push(
+      colParticipants.map(c => c[i] || "")
+    );
   }
 
+  // CSV EXPORT
   const csv = rows.map(r => r.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -52,11 +73,11 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  /* ===== LOAD REALTIME (REGISTRATIONS) ===== */
+  /* ===== LOAD REALTIME ===== */
   useEffect(() => {
     const regRef = ref(db, "registrations");
 
-    const unsub = onValue(regRef, snap => {
+    return onValue(regRef, snap => {
       const val = snap.val() || {};
 
       const arr = Object.entries(val).map(([id, v]) => ({
@@ -75,11 +96,8 @@ export default function AdminDashboard() {
 
       setData(arr);
     });
-
-    return () => unsub();
   }, []);
 
-  /* ===== DELETE ===== */
   function handleDelete(id) {
     if (!confirm("Hapus data ini?")) return;
     remove(ref(db, `registrations/${id}`));
@@ -122,7 +140,6 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* SEARCH */}
       <input
         placeholder="Cari peserta / WA / tanggal / batch / group"
         value={search}
@@ -161,7 +178,6 @@ export default function AdminDashboard() {
             >
               <p><b>Batch:</b> {d.batch}</p>
               <p><b>Group:</b> {d.group}</p>
-              <p><b>No WA PIC:</b> {d.pic_phone}</p>
 
               <p className="mt-2 font-bold">Peserta</p>
               <ul className="list-disc ml-5">
