@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 /* === DATE INPUT COLOR FIX === */
 .date-yellow::-webkit-calendar-picker-indicator {
   filter: invert(78%) sepia(95%) saturate(600%) hue-rotate(360deg);
@@ -7,4 +8,31 @@
 
 .date-yellow {
   color-scheme: dark;
+}
+
+/* === SMOOTH ANIMATIONS === */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* === SMOOTH SCROLLING === */
+html {
+  scroll-behavior: smooth;
+}
+
+/* === FOCUS VISIBLE IMPROVEMENTS === */
+*:focus-visible {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
 }
