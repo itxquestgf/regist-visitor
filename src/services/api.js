@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3001/api/registrations";
+const BASE_URL = "https://cody-chronographic-tobi.ngrok-free.dev/api/visitor/registrations";
 
 export async function getAll() {
   const res = await fetch(BASE_URL);
