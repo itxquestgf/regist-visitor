@@ -384,53 +384,67 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((d, index) => (
-              <div
-                key={d.id}
-                className="bg-white text-blue-950 p-5 rounded-2xl shadow-xl border-l-4 border-yellow-400 relative overflow-hidden group"
-              >
-                <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 px-3 py-1 rounded-bl-xl font-bold text-xs">
-                  Batch {d.batch}
-                </div>
-                
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="text-sm text-gray-500 font-semibold mb-1">Rombongan {index + 1}</p>
-                    <p className="font-bold text-lg">{d.pic_phone}</p>
-                    {d.pic_email && <p className="text-xs text-blue-500 font-medium break-all">{d.pic_email}</p>}
+          <div className="space-y-6">
+            {[1, 2, 3, 4, 5].map(b => {
+              const batchItems = items.filter(d => d.batch === b);
+              if (batchItems.length === 0) return null;
+              
+              return (
+                <div key={b} className="bg-blue-900/20 p-4 rounded-2xl border border-blue-800/30">
+                  <div className="flex items-center gap-2 mb-4 border-b border-blue-800/50 pb-2">
+                    <h3 className="text-lg font-bold text-yellow-400">Batch {b}</h3>
+                    <span className="bg-blue-800 text-blue-200 text-xs font-bold px-2 py-0.5 rounded-md">
+                      {batchItems.length} Rombongan
+                    </span>
                   </div>
-                  <button
-                    onClick={() => copyRombonganText(d)}
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-2.5 rounded-xl transition-colors shadow-sm"
-                    title="Salin data peserta rombongan ini"
-                  >
-                    <FaCopy className="text-lg" />
-                  </button>
-                </div>
+                  
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {batchItems.map((d, index) => (
+                      <div
+                        key={d.id}
+                        className="bg-white text-blue-950 p-5 rounded-2xl shadow-xl border-l-4 border-yellow-400 relative overflow-hidden group"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="text-sm text-gray-500 font-semibold mb-1">Rombongan {index + 1}</p>
+                            <p className="font-bold text-lg">{d.pic_phone}</p>
+                            {d.pic_email && <p className="text-xs text-blue-500 font-medium break-all">{d.pic_email}</p>}
+                          </div>
+                          <button
+                            onClick={() => copyRombonganText(d)}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-2.5 rounded-xl transition-colors shadow-sm"
+                            title="Salin data peserta rombongan ini"
+                          >
+                            <FaCopy className="text-lg" />
+                          </button>
+                        </div>
 
-                <div className="bg-blue-50 p-3 rounded-xl mb-4">
-                  <p className="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wide">Daftar Peserta ({d.participants.length})</p>
-                  <ul className="space-y-1">
-                    {d.participants.map((p, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm font-medium">
-                        <span className="font-bold text-blue-500 w-4 shrink-0">{i + 1}.</span>
-                        <span className={i === 0 ? "font-bold text-blue-900" : "text-gray-700"}>
-                          {p.name} {i === 0 && <span className="text-blue-500 ml-1">(PIC)</span>}
-                        </span>
-                      </li>
+                        <div className="bg-blue-50 p-3 rounded-xl mb-4">
+                          <p className="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wide">Daftar Peserta ({d.participants.length})</p>
+                          <ul className="space-y-1">
+                            {d.participants.map((p, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm font-medium">
+                                <span className="font-bold text-blue-500 w-4 shrink-0">{i + 1}.</span>
+                                <span className={i === 0 ? "font-bold text-blue-900" : "text-gray-700"}>
+                                  {p.name} {i === 0 && <span className="text-blue-500 ml-1">(PIC)</span>}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <button
+                          onClick={() => handleDelete(d.id)}
+                          className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm py-2 rounded-xl transition-colors"
+                        >
+                          Hapus Pendaftaran
+                        </button>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => handleDelete(d.id)}
-                  className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm py-2 rounded-xl transition-colors"
-                >
-                  Hapus Pendaftaran
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
