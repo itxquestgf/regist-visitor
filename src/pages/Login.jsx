@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FcGoogle } from "react-icons/fc";
+import LogoImage from "../assets/logo.png";
 
 export default function Login() {
   const { loginWithGoogle } = useAuth();
@@ -36,7 +37,7 @@ export default function Login() {
         <div className="text-center mb-8">
           <div className="inline-block bg-white p-3 rounded-full mb-4 shadow-lg border border-yellow-300">
             <img 
-              src="/logo.png" 
+              src={LogoImage} 
               alt="Chocolatos X-Quest" 
               className="w-24 h-auto object-contain"
               onError={(e) => {
