@@ -76,6 +76,13 @@ export default function AdminDashboard() {
   const [selectedDate, setSelectedDate] = useState("ALL");
   const navigate = useNavigate();
 
+  /* ===== PROTECT ROUTE ===== */
+  useEffect(() => {
+    if (localStorage.getItem("admin_pin") !== "logged_in") {
+      navigate("/admin");
+    }
+  }, [navigate]);
+
   /* ===== LOAD REALTIME ===== */
   useEffect(() => {
     const regRef = ref(db, "registrations");

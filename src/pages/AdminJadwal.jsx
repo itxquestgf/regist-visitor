@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ref, onValue, remove, update } from "firebase/database";
 import { db } from "../firebase";
 
 export default function AdminJadwal() {
   const [dates, setDates] = useState({});
   const [bulkDates, setBulkDates] = useState("");
+  const navigate = useNavigate();
+
+  /* ===== PROTECT ROUTE ===== */
+  useEffect(() => {
+    if (localStorage.getItem("admin_pin") !== "logged_in") {
+      navigate("/admin");
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const jadwalRef = ref(db, "jadwal");
