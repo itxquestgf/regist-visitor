@@ -46,7 +46,7 @@ export default function Login() {
             />
           </div>
           <h1 className="text-3xl font-black text-yellow-300 mb-2 tracking-wide drop-shadow-md">
-            X-QUEST VISITOR
+            CHOCOLATOS X-QUEST
           </h1>
           <p className="text-blue-200 font-medium text-sm px-4">
             Silakan masuk untuk memilih jadwal kunjungan Anda.
@@ -77,7 +77,7 @@ export default function Login() {
         <div className="mt-8 text-center">
           <p className="text-xs text-blue-300/60 font-medium">
             Sistem Pendaftaran Pengunjung &copy; 2026<br/>
-            ITX Quest - PT Garudafood Putra Putri Jaya Tbk
+            IT X-Quest - PT Garudafood Putra Putri Jaya Tbk
           </p>
         </div>
       </div>

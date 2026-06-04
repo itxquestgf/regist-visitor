@@ -44,7 +44,13 @@ export default function AdminDashboard() {
   const [data, setData] = useState([]);
   const [jadwalDates, setJadwalDates] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState("ALL");
+
+  const getTodayDate = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const navigate = useNavigate();
 
   /* ===== PROTECT ROUTE ===== */

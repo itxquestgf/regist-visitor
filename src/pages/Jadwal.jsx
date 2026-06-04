@@ -32,7 +32,14 @@ export default function Jadwal() {
 
   const [dates, setDates] = useState([]);
   const [visits, setVisits] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("ALL");
+
+  // Fungsi helper untuk mendapatkan tanggal hari ini dalam format YYYY-MM-DD
+  const getTodayDate = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
 
   /* =======================
      LOAD DATA FROM API
