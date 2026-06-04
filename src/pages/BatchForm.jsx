@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getRegistrations, createRegistration } from "../services/api";
 import { FaUsers, FaCalendarAlt, FaClock, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 
 export default function BatchForm() {
   const { date, batch } = useParams();
@@ -99,6 +100,7 @@ function GroupForm({ date, batch, group, used, refresh }) {
   }, [success]);
 
   const isFull = remaining <= 0;
+  const { currentUser } = useAuth(); // Ambil user saat ini
 
   async function submit() {
     setError("");
@@ -121,6 +123,7 @@ function GroupForm({ date, batch, group, used, refresh }) {
         group,
         count,
         pic_phone: phone,
+        pic_email: currentUser?.email || "Tidak ada email", // Menyertakan email
         participants: Array.from({ length: count }).map((_, i) => ({
           name: i === 0 ? picName : `Anggota ${i}`,
           is_pic: i === 0,

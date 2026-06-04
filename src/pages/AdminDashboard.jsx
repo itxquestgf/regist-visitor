@@ -164,7 +164,7 @@ export default function AdminDashboard() {
 
   /* ===== COPY FUNCTIONS ===== */
   function copyGroupText(d) {
-    let text = `Tanggal: ${d.date}\nBatch: ${d.batch}\nGroup: ${d.group}\nPIC WA: ${d.pic_phone}\n\nPeserta:\n`;
+    let text = `Tanggal: ${d.date}\nBatch: ${d.batch}\nGroup: ${d.group}\nPIC WA: ${d.pic_phone}\nEmail: ${d.pic_email || "-"}\n\nPeserta:\n`;
     d.participants.forEach((p, i) => {
       text += `${i + 1}. ${p.name} ${i === 0 ? "(PIC)" : ""}\n`;
     });
@@ -183,6 +183,7 @@ export default function AdminDashboard() {
     batchItems.forEach(d => {
       text += `--- Group ${d.group} ---\n`;
       text += `PIC WA: ${d.pic_phone}\n`;
+      text += `Email: ${d.pic_email || "-"}\n`;
       text += `Peserta (${d.participants.length} orang):\n`;
       d.participants.forEach((p, i) => {
         text += `${i + 1}. ${p.name} ${i === 0 ? "(PIC)" : ""}\n`;
@@ -329,6 +330,7 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-sm text-gray-500 font-semibold mb-1">Group {d.group}</p>
                     <p className="font-bold text-lg">{d.pic_phone}</p>
+                    {d.pic_email && <p className="text-xs text-blue-500 font-medium break-all">{d.pic_email}</p>}
                   </div>
                   <button
                     onClick={() => copyGroupText(d)}
