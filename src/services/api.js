@@ -24,21 +24,3 @@ export async function deleteRegistration(id) {
   await fetch(`${BASE_URL}/registrations/${id}`, { method: "DELETE", headers: HEADERS });
 }
 
-/* JADWAL */
-export async function getJadwal() {
-  const res = await fetch(`${BASE_URL}/jadwal`, { headers: HEADERS });
-  return res.json();
-}
-
-export async function addJadwal(dateStr) {
-  const res = await fetch(`${BASE_URL}/jadwal`, {
-    method: "POST",
-    headers: HEADERS,
-    body: JSON.stringify({ id: dateStr, date: dateStr })
-  });
-  return res.json();
-}
-
-export async function deleteJadwal(dateStr) {
-  await fetch(`${BASE_URL}/jadwal/${dateStr}`, { method: "DELETE", headers: HEADERS });
-}

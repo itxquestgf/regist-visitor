@@ -7,7 +7,6 @@ import Jadwal from "./pages/Jadwal";
 import BatchForm from "./pages/BatchForm";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminJadwal from "./pages/AdminJadwal";
 import Login from "./pages/Login";
 
 /* =========================
@@ -46,7 +45,6 @@ export default function App() {
           ===================== */}
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/jadwal" element={<AdminJadwal />} />
 
           {/* =====================
              FALLBACK

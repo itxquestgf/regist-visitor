@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRegistrations, getJadwal, deleteRegistration } from "../services/api";
+import { getRegistrations, deleteRegistration } from "../services/api";
 import { logout } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarDay, FaCircle, FaCopy, FaSync } from "react-icons/fa";
@@ -74,8 +74,24 @@ export default function AdminDashboard() {
       });
       setData(arr);
 
-      const jList = Array.isArray(jadwalList) ? jadwalList : [];
-      const sortedDates = jList.map(j => j.id).sort();
+      // Generate 30 days starting from today, plus any dates that exist in registrations
+      const generatedDates = new Set();
+      const today = new Date();
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        generatedDates.add(`${yyyy}-${mm}-${dd}`);
+      }
+      
+      // Add existing dates from data so we don't lose past data
+      arr.forEach(item => {
+        if (item.date) generatedDates.add(item.date);
+      });
+
+      const sortedDates = Array.from(generatedDates).sort();
       setJadwalDates(sortedDates);
 
       setSelectedDate(prev => {
@@ -184,9 +200,6 @@ export default function AdminDashboard() {
           Admin Dashboard
         </h1>
         <div className="flex gap-2 sm:gap-4">
-          <button onClick={() => navigate("/admin/jadwal")} className="bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all">
-            Atur Jadwal
-          </button>
           <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all">
             Logout
           </button>

@@ -12,7 +12,7 @@ import {
   FaArrowRight
 } from "react-icons/fa";
 import { useEffect, useState } from "react";
-import { getJadwal, getRegistrations } from "../services/api";
+import { getRegistrations } from "../services/api";
 
 const ADMIN_WA = "628131073719"; // GANTI NO ADMIN
 
@@ -46,9 +46,19 @@ export default function Jadwal() {
   ======================= */
   async function loadData() {
     try {
-      const jList = await getJadwal();
-      const jArr = Array.isArray(jList) ? jList : [];
-      const sortedDates = jArr.map(j => j.id).sort();
+      // Generate 30 days starting from today
+      const generatedDates = new Set();
+      const today = new Date();
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        generatedDates.add(`${yyyy}-${mm}-${dd}`);
+      }
+
+      const sortedDates = Array.from(generatedDates).sort();
       setDates(sortedDates);
 
       // JIKA hari ini belum ada jadwalnya, jangan biarkan blank, kembalikan ke "ALL"
