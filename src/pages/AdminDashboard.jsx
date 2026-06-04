@@ -75,7 +75,15 @@ export default function AdminDashboard() {
       setData(arr);
 
       const jList = Array.isArray(jadwalList) ? jadwalList : [];
-      setJadwalDates(jList.map(j => j.id).sort());
+      const sortedDates = jList.map(j => j.id).sort();
+      setJadwalDates(sortedDates);
+
+      setSelectedDate(prev => {
+        if (prev === getTodayDate() && !sortedDates.includes(getTodayDate())) {
+          return "ALL";
+        }
+        return prev;
+      });
     } catch (e) {
       console.error(e);
       alert("Gagal memuat data dari server lokal.");

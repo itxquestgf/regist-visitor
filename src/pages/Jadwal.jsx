@@ -48,7 +48,16 @@ export default function Jadwal() {
     try {
       const jList = await getJadwal();
       const jArr = Array.isArray(jList) ? jList : [];
-      setDates(jArr.map(j => j.id).sort());
+      const sortedDates = jArr.map(j => j.id).sort();
+      setDates(sortedDates);
+
+      // JIKA hari ini belum ada jadwalnya, jangan biarkan blank, kembalikan ke "ALL"
+      setSelectedDate(prev => {
+        if (prev === getTodayDate() && !sortedDates.includes(getTodayDate())) {
+          return "ALL";
+        }
+        return prev;
+      });
 
       const rList = await getRegistrations();
       const rArr = Array.isArray(rList) ? rList : [];
@@ -183,10 +192,17 @@ export default function Jadwal() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {dates
-              .filter(date => selectedDate === "ALL" || date === selectedDate)
-              .map(date => {
+          {/* JADWAL LIST */}
+          {dates.filter(date => selectedDate === "ALL" || date === selectedDate).length === 0 ? (
+            <div className="text-center py-10 bg-white/5 rounded-3xl border border-white/10">
+              <p className="text-xl text-yellow-300 font-bold mb-2">Tidak ada jadwal untuk tanggal ini</p>
+              <p className="text-sm text-blue-200">Silakan pilih tanggal lain atau "Semua Tanggal".</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {dates
+                .filter(date => selectedDate === "ALL" || date === selectedDate)
+                .map(date => {
             const dayFull = isDayFull(date);
 
             return (
