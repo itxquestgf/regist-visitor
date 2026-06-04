@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRegistrations, deleteRegistration } from "../services/api";
+import { getRegistrations, deleteRegistration, createRegistration } from "../services/api";
 import { logout } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarDay, FaCircle, FaCopy, FaSync } from "react-icons/fa";
@@ -45,6 +45,18 @@ export default function AdminDashboard() {
   const [jadwalDates, setJadwalDates] = useState([]);
   const [search, setSearch] = useState("");
 
+  /* ===== ADD MANUAL STATE ===== */
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+    date: "",
+    batch: 1,
+    pic_name: "",
+    pic_phone: "",
+    pic_email: "",
+    count: 1
+  });
+  const [isAdding, setIsAdding] = useState(false);
+
   const getTodayDate = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -64,8 +76,6 @@ export default function AdminDashboard() {
   async function loadData() {
     try {
       const regList = await getRegistrations();
-      const jadwalList = await getJadwal();
-
       const arr = Array.isArray(regList) ? regList : [];
       arr.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -123,6 +133,38 @@ export default function AdminDashboard() {
       loadData();
     } catch (e) {
       alert("Error: " + e.message);
+    }
+  }
+
+  async function handleAddSubmit(e) {
+    e.preventDefault();
+    if (!addForm.date || !addForm.pic_name || !addForm.pic_phone) {
+      return alert("Mohon lengkapi Tanggal, Nama PIC, dan No WA");
+    }
+    
+    setIsAdding(true);
+    try {
+      await createRegistration({
+        date: addForm.date,
+        batch: Number(addForm.batch),
+        group: 1, // default group for backwards compatibility
+        count: Number(addForm.count),
+        pic_phone: addForm.pic_phone,
+        pic_email: addForm.pic_email || "Offline Input",
+        participants: Array.from({ length: Number(addForm.count) }).map((_, i) => ({
+          name: i === 0 ? addForm.pic_name : `Anggota ${i}`,
+          is_pic: i === 0,
+        })),
+        createdAt: Date.now(),
+      });
+      alert("Data berhasil ditambahkan!");
+      setShowAddModal(false);
+      setAddForm({ date: "", batch: 1, pic_name: "", pic_phone: "", pic_email: "", count: 1 });
+      loadData();
+    } catch (e) {
+      alert("Gagal menambahkan data: " + e.message);
+    } finally {
+      setIsAdding(false);
     }
   }
 
@@ -195,12 +237,15 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950 p-4 sm:p-8 text-white">
-      <div className="flex items-center justify-between mb-6 bg-white/5 p-4 rounded-2xl border border-white/10">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 bg-white/5 p-4 rounded-2xl border border-white/10 gap-4">
         <h1 className="text-lg sm:text-2xl font-bold text-yellow-300">
           Admin Dashboard
         </h1>
-        <div className="flex gap-2 sm:gap-4">
-          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all">
+        <div className="flex flex-wrap gap-2 sm:gap-4 w-full sm:w-auto">
+          <button onClick={() => setShowAddModal(true)} className="bg-green-600 hover:bg-green-500 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all flex-grow sm:flex-grow-0">
+            + Tambah Manual
+          </button>
+          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all flex-grow sm:flex-grow-0">
             Logout
           </button>
         </div>
@@ -362,6 +407,52 @@ export default function AdminDashboard() {
           </div>
         </div>
       ))}
+      {/* ADD MANUAL MODAL */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-blue-950 rounded-3xl p-6 w-full max-w-md shadow-2xl relative">
+            <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-xl font-bold">
+              &times;
+            </button>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <FaCalendarDay className="text-blue-600" /> Tambah Rombongan Manual
+            </h2>
+            
+            <form onSubmit={handleAddSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Tanggal Kunjungan</label>
+                <input type="date" required value={addForm.date} onChange={e => setAddForm({...addForm, date: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Batch</label>
+                <select value={addForm.batch} onChange={e => setAddForm({...addForm, batch: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  {[1,2,3,4,5].map(b => <option key={b} value={b}>Batch {b}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Nama PIC</label>
+                <input type="text" required value={addForm.pic_name} onChange={e => setAddForm({...addForm, pic_name: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nama Ketua Rombongan" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">No WhatsApp PIC</label>
+                <input type="tel" required value={addForm.pic_phone} onChange={e => setAddForm({...addForm, pic_phone: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="08..." />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Email PIC (Opsional)</label>
+                <input type="email" value={addForm.pic_email} onChange={e => setAddForm({...addForm, pic_email: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="email@contoh.com" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Jumlah Peserta</label>
+                <input type="number" min="1" max="54" required value={addForm.count} onChange={e => setAddForm({...addForm, count: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              
+              <button disabled={isAdding} type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl mt-4 transition-colors disabled:opacity-50">
+                {isAdding ? "Menyimpan..." : "Simpan Data"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

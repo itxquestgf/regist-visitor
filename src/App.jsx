@@ -8,6 +8,7 @@ import BatchForm from "./pages/BatchForm";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
+import MyBooking from "./pages/MyBooking";
 
 /* =========================
    PROTECTED ROUTE WRAPPER
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/jadwal" element={<ProtectedRoute><Jadwal /></ProtectedRoute>} />
           <Route path="/batch/:date/:batch" element={<ProtectedRoute><BatchForm /></ProtectedRoute>} />
+          <Route path="/my-booking" element={<ProtectedRoute><MyBooking /></ProtectedRoute>} />
 
           {/* =====================
              ADMIN (HANYA MENGGUNAKAN PIN)

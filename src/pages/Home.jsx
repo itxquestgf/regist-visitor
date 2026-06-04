@@ -12,13 +12,18 @@ export default function Home() {
       
       {/* HEADER: USER PROFILE & LOGOUT */}
       <div className="absolute top-0 w-full p-4 flex justify-between items-center bg-white/5 backdrop-blur-sm border-b border-white/10">
-        <div className="flex items-center gap-2 text-yellow-300">
+        <div className="flex items-center gap-3">
           {currentUser?.photoURL ? (
-            <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full border border-yellow-300" />
+            <img src={currentUser.photoURL} alt="Profile" className="w-10 h-10 rounded-full border-2 border-yellow-300 shadow-md object-cover" />
           ) : (
-            <FaUserCircle className="text-2xl" />
+            <FaUserCircle className="text-4xl text-yellow-300" />
           )}
-          <span className="font-semibold text-sm hidden sm:inline">{currentUser?.displayName || currentUser?.email}</span>
+          <div className="flex flex-col">
+            <span className="text-xs text-blue-200 font-medium">Halo, selamat datang! 👋</span>
+            <span className="font-bold text-sm sm:text-base text-yellow-300 truncate max-w-[150px] sm:max-w-[250px]">
+              {currentUser?.displayName || currentUser?.email?.split('@')[0]}
+            </span>
+          </div>
         </div>
         <button
           onClick={async () => {
@@ -34,12 +39,21 @@ export default function Home() {
 
       <Logo />
 
-      <button
-        onClick={() => navigate("/jadwal")}
-        className="bg-yellow-300 hover:bg-yellow-400 text-blue-950 px-8 py-4 rounded-xl font-black text-xl shadow-lg transform transition-all hover:scale-105 active:scale-95"
-      >
-        Mulai Kunjungan
-      </button>
+      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm px-4">
+        <button
+          onClick={() => navigate("/jadwal")}
+          className="w-full bg-yellow-300 hover:bg-yellow-400 text-blue-950 px-6 py-4 rounded-xl font-black text-lg shadow-lg transform transition-all hover:scale-105 active:scale-95"
+        >
+          Mulai Kunjungan
+        </button>
+        
+        <button
+          onClick={() => navigate("/my-booking")}
+          className="w-full bg-blue-800 hover:bg-blue-700 text-yellow-300 border-2 border-yellow-300/50 px-6 py-4 rounded-xl font-black text-lg shadow-lg transform transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+        >
+          Tiket Saya
+        </button>
+      </div>
     </div>
   );
 }

@@ -8,7 +8,8 @@ import {
   FaCheckCircle, 
   FaTimesCircle,
   FaUsers,
-  FaExclamationTriangle,
+  FaChevronLeft,
+  FaChevronRight,
   FaArrowRight
 } from "react-icons/fa";
 import { useEffect, useState } from "react";
@@ -16,9 +17,6 @@ import { getRegistrations } from "../services/api";
 
 const ADMIN_WA = "628131073719"; // GANTI NO ADMIN
 
-/* =======================
-   BATCH LIST
-======================= */
 const BATCHES = [
   { id: 1, time: "08.45 - 11.00" },
   { id: 2, time: "09.45 - 12.00" },
@@ -29,49 +27,24 @@ const BATCHES = [
 
 export default function Jadwal() {
   const navigate = useNavigate();
-
-  const [dates, setDates] = useState([]);
   const [visits, setVisits] = useState([]);
-
-  // Fungsi helper untuk mendapatkan tanggal hari ini dalam format YYYY-MM-DD
-  const getTodayDate = () => {
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  
+  const getTodayStr = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
+  
+  const [selectedDate, setSelectedDate] = useState(getTodayStr());
 
-  const [selectedDate, setSelectedDate] = useState(getTodayDate());
-
-  /* =======================
-     LOAD DATA FROM API
-  ======================= */
   async function loadData() {
     try {
-      // Generate 30 days starting from today
-      const generatedDates = new Set();
-      const today = new Date();
-      for (let i = 0; i < 30; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        generatedDates.add(`${yyyy}-${mm}-${dd}`);
-      }
-
-      const sortedDates = Array.from(generatedDates).sort();
-      setDates(sortedDates);
-
-      // JIKA hari ini belum ada jadwalnya, jangan biarkan blank, kembalikan ke "ALL"
-      setSelectedDate(prev => {
-        if (prev === getTodayDate() && !sortedDates.includes(getTodayDate())) {
-          return "ALL";
-        }
-        return prev;
-      });
-
       const rList = await getRegistrations();
-      const rArr = Array.isArray(rList) ? rList : [];
-      setVisits(rArr);
+      setVisits(Array.isArray(rList) ? rList : []);
     } catch (e) {
       console.error(e);
     }
@@ -83,39 +56,71 @@ export default function Jadwal() {
     return () => clearInterval(interval);
   }, []);
 
-  /* =======================
-     CEK BATCH AVAILABILITY
-  ======================= */
+  // Total capacity per day is 5 batches * 54 = 270
+  const CAPACITY_PER_BATCH = 54;
+  const CAPACITY_PER_DAY = BATCHES.length * CAPACITY_PER_BATCH;
+
+  function getDailyVisits(dateStr) {
+    let count = 0;
+    visits.forEach(d => {
+      if (d.date === dateStr) count += Number(d.count || 0);
+    });
+    return count;
+  }
+
   function getBatchAvailability(date, batchId) {
     let count = 0;
-
     visits.forEach(d => {
       if (d.date === date && d.batch === batchId) {
         count += Number(d.count || 0);
       }
     });
 
-    const capacity = 54; // 3 grup x 18 orang
-    const remaining = capacity - count;
-    
+    const remaining = CAPACITY_PER_BATCH - count;
     return {
       used: count,
-      capacity,
+      capacity: CAPACITY_PER_BATCH,
       remaining: remaining > 0 ? remaining : 0,
-      full: count >= capacity
+      full: count >= CAPACITY_PER_BATCH
     };
   }
 
-  /* =======================
-     CEK HARI FULL
-  ======================= */
-  function isDayFull(date) {
-    return BATCHES.every(b => getBatchAvailability(date, b.id).full);
+  /* CALENDAR LOGIC */
+  function nextMonth() {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  }
+  function prevMonth() {
+    // Only allow current month and future months
+    const now = new Date();
+    if (currentMonth.getFullYear() > now.getFullYear() || (currentMonth.getFullYear() === now.getFullYear() && currentMonth.getMonth() > now.getMonth())) {
+      setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+    }
   }
 
-  /* =======================
-     UI
-  ======================= */
+  function getCalendarCells() {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const cells = [];
+    // Empty cells before the first day
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(null);
+    }
+    // Actual days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(year, month, i);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      cells.push({ day: i, dateStr, dateObj: d });
+    }
+    return cells;
+  }
+
+  const cells = getCalendarCells();
+  const weekDays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950 px-4 py-6 sm:py-8 text-white relative">
       {/* LOGO */}
@@ -123,185 +128,164 @@ export default function Jadwal() {
         <Logo />
       </div>
 
-      {/* PAGE TITLE */}
-      <div className="max-w-6xl mx-auto mb-6 sm:mb-8 text-center">
-        <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl border border-white/20">
-          <FaCalendarAlt className="text-yellow-300 text-2xl" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-yellow-300">
-            Pilih Jadwal Kunjungan
-          </h1>
-        </div>
-      </div>
-
-      {/* JADWAL */}
-      {dates.length === 0 ? (
-        <div className="max-w-md mx-auto text-center py-12">
-          <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
-            <FaCalendarAlt className="text-yellow-300 text-5xl mx-auto mb-4" />
-            <p className="text-xl font-semibold text-blue-200 mb-2">
-              Belum Ada Jadwal Tersedia
-            </p>
-            <p className="text-sm text-blue-300">
-              Silakan hubungi admin untuk informasi lebih lanjut.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="max-w-6xl mx-auto">
-          {/* FILTER TANGGAL */}
-          <div className="mb-8">
-            <h2 className="text-sm font-semibold text-blue-200 mb-3 uppercase tracking-wider text-center sm:text-left">
-              Filter Tanggal Kunjungan
+      <div className="max-w-6xl mx-auto mb-6 sm:mb-8 flex flex-col md:flex-row gap-6">
+        
+        {/* CALENDAR SECTION */}
+        <div className="md:w-1/2 bg-white/10 backdrop-blur-xl p-6 rounded-3xl border border-white/20 shadow-2xl h-fit">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-yellow-300 flex items-center gap-2">
+              <FaCalendarAlt /> {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </h2>
-            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide justify-start sm:justify-center lg:justify-start">
-              <button
-                onClick={() => setSelectedDate("ALL")}
-                className={`
-                  shrink-0 px-6 py-3 rounded-xl font-bold transition-all
-                  ${selectedDate === "ALL" 
-                    ? "bg-yellow-400 text-blue-950 shadow-lg scale-105" 
-                    : "bg-white/10 text-blue-100 hover:bg-white/20 border border-white/20"
-                  }
-                `}
+            <div className="flex gap-2">
+              <button 
+                onClick={prevMonth}
+                disabled={currentMonth.getFullYear() === today.getFullYear() && currentMonth.getMonth() === today.getMonth()}
+                className="p-2 bg-blue-800 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-full transition-colors"
               >
-                Semua Tanggal
+                <FaChevronLeft />
               </button>
-              
-              {dates.map(date => {
-                // Hitung jumlah pendaftar di tanggal ini
-                let count = 0;
-                Object.values(visits).forEach(d => {
-                  if (d.date === date) count++;
-                });
-                
-                const hasData = count > 0;
-                
-                return (
-                  <button
-                    key={date}
-                    onClick={() => setSelectedDate(date)}
-                    className={`
-                      shrink-0 px-5 py-3 rounded-xl font-bold transition-all relative
-                      flex items-center gap-2
-                      ${selectedDate === date 
-                        ? "bg-yellow-400 text-blue-950 shadow-lg scale-105" 
-                        : "bg-white/10 text-blue-100 hover:bg-white/20 border border-white/20"
-                      }
-                    `}
-                  >
-                    <FaCalendarDay className={selectedDate === date ? "text-blue-900" : "text-yellow-300"} />
-                    <span>{date}</span>
-                    {hasData && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-black px-2 py-1 rounded-full shadow-md animate-pulse border-2 border-blue-950">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+              <button onClick={nextMonth} className="p-2 bg-blue-800 hover:bg-blue-700 rounded-full transition-colors">
+                <FaChevronRight />
+              </button>
             </div>
           </div>
 
-          {/* JADWAL LIST */}
-          {dates.filter(date => selectedDate === "ALL" || date === selectedDate).length === 0 ? (
-            <div className="text-center py-10 bg-white/5 rounded-3xl border border-white/10">
-              <p className="text-xl text-yellow-300 font-bold mb-2">Tidak ada jadwal untuk tanggal ini</p>
-              <p className="text-sm text-blue-200">Silakan pilih tanggal lain atau "Semua Tanggal".</p>
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {dates
-                .filter(date => selectedDate === "ALL" || date === selectedDate)
-                .map(date => {
-            const dayFull = isDayFull(date);
+          <div className="grid grid-cols-7 gap-2 text-center text-sm font-bold text-blue-200 mb-2">
+            {weekDays.map(w => <div key={w}>{w}</div>)}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-2">
+            {cells.map((c, i) => {
+              if (!c) return <div key={i} className="p-2"></div>;
 
-            return (
-              <div
-                key={date}
-                className="bg-white text-blue-950 rounded-3xl p-5 sm:p-6 shadow-2xl border-2 border-blue-100 space-y-5 transform transition-all hover:shadow-3xl hover:scale-[1.02]"
-              >
-                {/* DATE HEADER */}
-                <div className="text-center pb-4 border-b-2 border-blue-100">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <FaCalendarAlt className="text-blue-600 text-xl" />
-                    <h2 className="font-bold text-xl sm:text-2xl">{date}</h2>
-                  </div>
-                  {dayFull && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">
-                      <FaTimesCircle />
-                      <span>SEMUA BATCH PENUH</span>
+              const isPast = c.dateObj < today;
+              const isSelected = selectedDate === c.dateStr;
+              const count = getDailyVisits(c.dateStr);
+              
+              // Determine color indicator
+              let bgColor = "bg-white/5 hover:bg-white/10";
+              let indicatorColor = "bg-green-500"; // Empty / Available
+              if (isPast) {
+                bgColor = "bg-gray-800/50 opacity-50 cursor-not-allowed";
+                indicatorColor = "bg-gray-500";
+              } else if (count >= CAPACITY_PER_DAY) {
+                bgColor = "bg-red-900/50 hover:bg-red-800/50";
+                indicatorColor = "bg-red-500";
+              } else if (count >= CAPACITY_PER_DAY / 2) {
+                indicatorColor = "bg-yellow-400";
+              }
+
+              if (isSelected && !isPast) {
+                bgColor = "bg-yellow-400 text-blue-950 scale-105 shadow-lg shadow-yellow-400/20";
+              }
+
+              return (
+                <button
+                  key={c.dateStr}
+                  disabled={isPast}
+                  onClick={() => setSelectedDate(c.dateStr)}
+                  className={`relative p-3 rounded-xl transition-all duration-200 flex flex-col items-center justify-center border border-transparent ${isSelected ? "border-yellow-200" : "hover:border-white/20"} ${bgColor}`}
+                >
+                  <span className={`text-base font-bold ${isSelected ? "text-blue-950" : "text-white"}`}>
+                    {c.day}
+                  </span>
+                  {!isPast && (
+                    <div className="mt-1 flex flex-col items-center gap-0.5">
+                      <div className={`w-1.5 h-1.5 rounded-full ${indicatorColor}`}></div>
+                      {count > 0 && <span className={`text-[9px] font-black ${isSelected ? "text-blue-900" : "text-blue-200"}`}>{count}</span>}
                     </div>
                   )}
-                </div>
+                </button>
+              );
+            })}
+          </div>
 
-                {/* BATCHES */}
-                <div className="space-y-3">
-                  {BATCHES.map(b => {
-                    const status = getBatchAvailability(date, b.id);
-                    const full = status.full;
-
-                    return (
-                      <button
-                        key={b.id}
-                        disabled={full}
-                        onClick={() =>
-                          !full && navigate(`/batch/${date}/${b.id}`)
-                        }
-                        className={`
-                          w-full p-4 rounded-xl text-sm text-left
-                          transition-all duration-200 flex justify-between items-center
-                          transform
-                          ${
-                            full
-                              ? "bg-gray-200 text-gray-500 cursor-not-allowed border-2 border-gray-300"
-                              : "bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-950 hover:to-blue-900 hover:text-yellow-300 border-2 border-blue-200 hover:border-yellow-300 active:scale-[0.98] shadow-md hover:shadow-lg"
-                          }
-                        `}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`
-                            p-2 rounded-lg
-                            ${full 
-                              ? "bg-gray-300" 
-                              : "bg-blue-600 text-white"
-                            }
-                          `}>
-                            <FaUsers className="text-sm" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-base">Batch {b.id}</p>
-                            <div className={`text-xs flex flex-col gap-0.5 mt-0.5 ${
-                              full ? "text-gray-500" : "text-blue-600"
-                            }`}>
-                              <span className="flex items-center gap-1.5"><FaClock className="text-xs" /> {b.time}</span>
-                              <span className={`font-semibold ${full ? "" : "text-green-600"}`}>
-                                Sisa {status.remaining} slot peserta
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {full ? (
-                            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
-                              <FaTimesCircle />
-                              <span>PENUH</span>
-                            </div>
-                          ) : (
-                            <div className="p-2 bg-yellow-300 text-blue-950 rounded-lg">
-                              <FaArrowRight className="text-sm" />
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+          {/* LEGEND */}
+          <div className="mt-6 flex justify-center gap-4 text-xs font-semibold text-blue-200">
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500"></div> Tersedia</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-yellow-400"></div> Mulai Penuh</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500"></div> Penuh</div>
+          </div>
         </div>
+
+        {/* SELECTED DATE BATCHES */}
+        <div className="md:w-1/2">
+          {selectedDate ? (
+            <div className="bg-white text-blue-950 rounded-3xl p-6 shadow-2xl border-2 border-blue-100">
+              <div className="text-center pb-4 border-b-2 border-blue-100 mb-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <FaCalendarDay className="text-blue-600 text-xl" />
+                  <h2 className="font-bold text-2xl">{selectedDate}</h2>
+                </div>
+                <p className="text-sm font-bold text-blue-500">Pilih Batch Kunjungan</p>
+              </div>
+
+              <div className="space-y-4">
+                {BATCHES.map(b => {
+                  const status = getBatchAvailability(selectedDate, b.id);
+                  const full = status.full;
+
+                  return (
+                    <button
+                      key={b.id}
+                      disabled={full}
+                      onClick={() => !full && navigate(`/batch/${selectedDate}/${b.id}`)}
+                      className={`
+                        w-full p-4 rounded-xl text-sm text-left
+                        transition-all duration-200 flex justify-between items-center
+                        transform
+                        ${
+                          full
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed border-2 border-gray-300"
+                            : "bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-950 hover:to-blue-900 hover:text-yellow-300 border-2 border-blue-200 hover:border-yellow-300 active:scale-[0.98] shadow-md hover:shadow-lg"
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`
+                          p-2 rounded-lg
+                          ${full ? "bg-gray-300" : "bg-blue-600 text-white"}
+                        `}>
+                          <FaUsers className="text-sm" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-base">Batch {b.id}</p>
+                          <div className={`text-xs flex flex-col gap-0.5 mt-0.5 ${full ? "text-gray-500" : "text-blue-600"}`}>
+                            <span className="flex items-center gap-1.5"><FaClock className="text-xs" /> {b.time}</span>
+                            <span className={`font-semibold ${full ? "" : "text-green-600"}`}>
+                              Sisa {status.remaining} slot peserta
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {full ? (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
+                            <FaTimesCircle />
+                            <span>PENUH</span>
+                          </div>
+                        ) : (
+                          <div className="p-2 bg-yellow-300 text-blue-950 rounded-lg">
+                            <FaArrowRight className="text-sm" />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center bg-white/5 rounded-3xl border border-white/10 p-8 text-center">
+              <div>
+                <FaCalendarDay className="text-4xl text-blue-400 mx-auto mb-3 opacity-50" />
+                <p className="text-blue-200 font-bold">Pilih tanggal di kalender<br/>untuk melihat jadwal Batch.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
-      )}
 
       {/* FLOATING WA */}
       <a
