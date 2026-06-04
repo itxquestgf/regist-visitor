@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getRegistrations, deleteRegistration, createLog } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
-import { FaTrash, FaArrowLeft, FaCalendarCheck } from "react-icons/fa";
+import { FaTrash, FaArrowLeft, FaCalendarCheck, FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 export default function MyBooking() {
@@ -10,6 +10,12 @@ export default function MyBooking() {
   const navigate = useNavigate();
   const [myBookings, setMyBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const getTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const todayStr = getTodayStr();
 
   async function loadMyBookings() {
     setLoading(true);
@@ -120,12 +126,18 @@ export default function MyBooking() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => handleCancelBooking(b.id)}
-                  className="w-full bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 group-hover:border-transparent"
-                >
-                  <FaTrash /> Batalkan Kunjungan
-                </button>
+                {b.date < todayStr ? (
+                  <div className="w-full bg-green-50 text-green-700 border border-green-200 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+                    <FaCheckCircle className="text-xl" /> Terima Kasih atas Kunjungan Anda!
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handleCancelBooking(b.id)}
+                    className="w-full bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 group-hover:border-transparent"
+                  >
+                    <FaTrash /> Batalkan Kunjungan
+                  </button>
+                )}
               </div>
             ))}
           </div>
