@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:4000";
+const BASE_URL = "https://cody-chronographic-tobi.ngrok-free.dev/api/visitor";
 
 /* REGISTRATIONS */
 export async function getRegistrations() {
