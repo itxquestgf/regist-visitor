@@ -42,11 +42,11 @@ export default function App() {
           <Route path="/batch/:date/:batch" element={<ProtectedRoute><BatchForm /></ProtectedRoute>} />
 
           {/* =====================
-             ADMIN (GANDA: GOOGLE LOGIN + PIN)
+             ADMIN (HANYA MENGGUNAKAN PIN)
           ===================== */}
-          <Route path="/admin" element={<ProtectedRoute><AdminLogin /></ProtectedRoute>} />
-          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/jadwal" element={<ProtectedRoute><AdminJadwal /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/jadwal" element={<AdminJadwal />} />
 
           {/* =====================
              FALLBACK
