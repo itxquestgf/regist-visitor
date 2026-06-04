@@ -298,7 +298,7 @@ export default function AdminDashboard() {
         <h2 className="text-sm font-semibold text-blue-200 mb-3 uppercase tracking-wider">
           Pilih Tanggal Kunjungan
         </h2>
-        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-3 overflow-x-auto pt-3 pb-4 px-2 scrollbar-hide">
           <button
             onClick={() => setSelectedDate("ALL")}
             className={`
