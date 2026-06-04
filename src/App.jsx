@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 /* PAGES */
 import Home from "./pages/Home";
@@ -6,40 +7,53 @@ import Jadwal from "./pages/Jadwal";
 import BatchForm from "./pages/BatchForm";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminJadwal from "./pages/AdminJadwal"; // ⬅️ PAGE BARU
+import AdminJadwal from "./pages/AdminJadwal";
+import Login from "./pages/Login";
+
+/* =========================
+   PROTECTED ROUTE WRAPPER
+========================= */
+function ProtectedRoute({ children }) {
+  const { currentUser } = useAuth();
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
 
 /* =========================
    APP ROUTER
 ========================= */
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* =====================
+             LOGIN PAGE
+          ===================== */}
+          <Route path="/login" element={<Login />} />
 
-        {/* =====================
-           PUBLIC
-        ===================== */}
-        <Route path="/" element={<Home />} />
-        <Route path="/jadwal" element={<Jadwal />} />
-        <Route path="/batch/:date/:batch" element={<BatchForm />} />
+          {/* =====================
+             PUBLIC / PROTECTED VISITOR
+          ===================== */}
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/jadwal" element={<ProtectedRoute><Jadwal /></ProtectedRoute>} />
+          <Route path="/batch/:date/:batch" element={<ProtectedRoute><BatchForm /></ProtectedRoute>} />
 
-        {/* =====================
-           ADMIN (LOGIN DIABAIKAN)
-        ===================== */}
-        <Route path="/admin" element={<AdminLogin />} />
+          {/* =====================
+             ADMIN (GANDA: GOOGLE LOGIN + PIN)
+          ===================== */}
+          <Route path="/admin" element={<ProtectedRoute><AdminLogin /></ProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/jadwal" element={<ProtectedRoute><AdminJadwal /></ProtectedRoute>} />
 
-        {/* dashboard langsung bisa */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
-        {/* setting jadwal manual */}
-        <Route path="/admin/jadwal" element={<AdminJadwal />} />
-
-        {/* =====================
-           FALLBACK
-        ===================== */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-
-      </Routes>
-    </BrowserRouter>
+          {/* =====================
+             FALLBACK
+          ===================== */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

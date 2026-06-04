@@ -2,8 +2,64 @@
   "admins": {
     "1234": true
   },
-  "jadwal": [],
-  "registrations": [],
+  "jadwal": [
+    {
+      "id": "2026-06-05",
+      "date": "2026-06-05"
+    }
+  ],
+  "registrations": [
+    {
+      "id": "r1",
+      "date": "2026-06-05",
+      "batch": 1,
+      "group": 1,
+      "count": 5,
+      "pic_phone": "081234567890",
+      "participants": [
+        {
+          "name": "Budi (PIC)",
+          "is_pic": true
+        },
+        {
+          "name": "Anggota 1",
+          "is_pic": false
+        },
+        {
+          "name": "Anggota 2",
+          "is_pic": false
+        },
+        {
+          "name": "Anggota 3",
+          "is_pic": false
+        },
+        {
+          "name": "Anggota 4",
+          "is_pic": false
+        }
+      ],
+      "createdAt": 1766895812993
+    },
+    {
+      "id": "r2",
+      "date": "2026-06-05",
+      "batch": 2,
+      "group": 1,
+      "count": 2,
+      "pic_phone": "089876543210",
+      "participants": [
+        {
+          "name": "Andi (PIC)",
+          "is_pic": true
+        },
+        {
+          "name": "Anggota 1",
+          "is_pic": false
+        }
+      ],
+      "createdAt": 1766895813000
+    }
+  ],
   "settings": {
     "mode": "manual"
   },
