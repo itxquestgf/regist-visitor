@@ -3,20 +3,21 @@ import { useEffect, useState } from "react";
 import { getRegistrations, createRegistration } from "../services/api";
 import { FaUsers, FaCalendarAlt, FaClock, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import Swal from "sweetalert2";
 
 export default function BatchForm() {
   const { date, batch } = useParams();
-  const [used, setUsed] = useState({ 1: 0, 2: 0, 3: 0 });
+  const [used, setUsed] = useState(0);
 
   async function loadData() {
     try {
       const all = await getRegistrations();
       const arr = Array.isArray(all) ? all : [];
       
-      const temp = { 1: 0, 2: 0, 3: 0 };
+      let temp = 0;
       arr.forEach(d => {
         if (d.date === date && d.batch === Number(batch)) {
-          temp[d.group] += d.count;
+          temp += d.count;
         }
       });
       setUsed(temp);
@@ -55,28 +56,24 @@ export default function BatchForm() {
         </div>
       </div>
 
-      {/* GROUP FORMS */}
+      {/* FORM PENDAFTARAN */}
       <div className="max-w-2xl mx-auto space-y-6">
-        {[1, 2, 3].map(group => (
-          <GroupForm
-            key={group}
-            date={date}
-            batch={Number(batch)}
-            group={group}
-            used={used[group]}
-            refresh={loadData}
-          />
-        ))}
+        <RegistrationForm
+          date={date}
+          batch={Number(batch)}
+          used={used}
+          refresh={loadData}
+        />
       </div>
     </div>
   );
 }
 
 /* =========================
-   GROUP FORM
+   REGISTRATION FORM
 ========================= */
-function GroupForm({ date, batch, group, used, refresh }) {
-  const capacity = 18;
+function RegistrationForm({ date, batch, used, refresh }) {
+  const capacity = 54;
   const remaining = capacity - used;
 
   const [count, setCount] = useState(1);
@@ -117,10 +114,34 @@ function GroupForm({ date, batch, group, used, refresh }) {
     }
 
     try {
+      // PENGECEKAN ULANG REAL-TIME (Anti-Bentrok)
+      const all = await getRegistrations();
+      const arr = Array.isArray(all) ? all : [];
+      let currentUsed = 0;
+      arr.forEach(d => {
+        if (d.date === date && d.batch === Number(batch)) {
+          currentUsed += d.count;
+        }
+      });
+      
+      // Jika ternyata kuota sudah direbut orang lain dalam hitungan detik
+      if (currentUsed + count > capacity) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Kalah Cepat! 🏃‍♂️💨',
+          html: `Maaf, kuota baru saja diambil oleh rombongan lain.<br/><br/>Sisa kuota batch ini tinggal <b>${capacity - currentUsed}</b> orang. Silakan kurangi jumlah anggota atau pilih jadwal lain.`,
+          confirmButtonColor: '#eab308', // kuning chocolatos
+          background: '#172554', // biru 950
+          color: '#fef08a'
+        });
+        refresh(); // Refresh angka di layar
+        return;
+      }
+
       await createRegistration({
         date,
         batch: Number(batch),
-        group,
+        group: 1, // Fix default ke 1 agar tidak merusak format data lama
         count,
         pic_phone: phone,
         pic_email: currentUser?.email || "Tidak ada email", // Menyertakan email
@@ -150,7 +171,7 @@ function GroupForm({ date, batch, group, used, refresh }) {
           <div className="p-2.5 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-md">
             <FaUsers className="text-white text-lg" />
           </div>
-          <h3 className="font-bold text-xl text-blue-950">Group {group}</h3>
+          <h3 className="font-bold text-xl text-blue-950">Form Pendaftaran Rombongan</h3>
         </div>
         <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200">
           <span className="text-sm font-bold text-blue-700">
@@ -180,7 +201,7 @@ function GroupForm({ date, batch, group, used, refresh }) {
       {isFull ? (
         <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-xl text-sm font-semibold flex items-center gap-3 animate-in slide-in-from-top-2">
           <FaExclamationCircle className="text-red-500 text-lg shrink-0" />
-          <span>Kuota grup ini telah penuh (18/18 peserta)</span>
+          <span>Kuota pendaftaran untuk Batch ini telah penuh (54/54 peserta)</span>
         </div>
       ) : error ? (
         <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-xl text-sm font-semibold flex items-center gap-3 animate-in slide-in-from-top-2">

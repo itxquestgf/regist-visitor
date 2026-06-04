@@ -8,51 +8,23 @@ import { FaCalendarDay, FaCircle, FaCopy, FaSync } from "react-icons/fa";
    EXPORT CSV (HORIZONTAL)
 ======================= */
 function downloadByDate(date, records) {
-  // BATCH 1–5, GROUP 1–3
-  const batches = [1, 2, 3, 4, 5];
-  const groups = [1, 2, 3];
+  const rows = [
+    ["Tanggal", "Batch", "Nama PIC", "WhatsApp", "Email", "Total Peserta", "Daftar Peserta (Dipisahkan koma)"]
+  ];
 
-  // Susun kolom: Batch x Group
-  const columns = [];
-  batches.forEach(b =>
-    groups.forEach(g =>
-      columns.push({ batch: b, group: g })
-    )
-  );
-
-  const rows = [];
-
-  // ROW 1 → TANGGAL
-  rows.push([date]);
-
-  // ROW 2 → BATCH
-  rows.push(
-    columns.map(c => `Batch ${c.batch}`)
-  );
-
-  // ROW 3 → GROUP
-  rows.push(
-    columns.map(c => `Group ${c.group}`)
-  );
-
-  // Ambil peserta per kolom
-  const colParticipants = columns.map(c => {
-    return records
-      .filter(r => r.batch === c.batch && r.group === c.group)
-      .flatMap(r => r.participants.map(p => p.name));
+  records.forEach(r => {
+    const participants = r.participants.map(p => p.name).join(", ");
+    rows.push([
+      r.date,
+      `Batch ${r.batch}`,
+      r.participants[0]?.name || "-",
+      r.pic_phone,
+      r.pic_email || "-",
+      r.count,
+      `"${participants}"`
+    ]);
   });
 
-  // Cari jumlah baris terbanyak
-  const maxLen = Math.max(...colParticipants.map(c => c.length), 0);
-
-  // ROW 4+ → PESERTA
-  for (let i = 0; i < maxLen; i++) {
-    rows.push(
-      colParticipants.map(c => c[i] || "")
-    );
-  }
-
-  // CSV EXPORT
   const csv = rows.map(r => r.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -163,25 +135,22 @@ export default function AdminDashboard() {
   }, {});
 
   /* ===== COPY FUNCTIONS ===== */
-  function copyGroupText(d) {
-    let text = `Tanggal: ${d.date}\nBatch: ${d.batch}\nGroup: ${d.group}\nPIC WA: ${d.pic_phone}\nEmail: ${d.pic_email || "-"}\n\nPeserta:\n`;
+  function copyRombonganText(d) {
+    let text = `Tanggal: ${d.date}\nBatch: ${d.batch}\nPIC WA: ${d.pic_phone}\nEmail: ${d.pic_email || "-"}\n\nPeserta:\n`;
     d.participants.forEach((p, i) => {
       text += `${i + 1}. ${p.name} ${i === 0 ? "(PIC)" : ""}\n`;
     });
     navigator.clipboard.writeText(text);
-    alert(`Data Rombongan Group ${d.group} berhasil disalin!`);
+    alert(`Data Rombongan berhasil disalin!`);
   }
 
   function copyBatchText(date, batchId, items) {
     const batchItems = items.filter(d => d.batch === batchId);
     if (batchItems.length === 0) return alert("Tidak ada data di batch ini");
 
-    // Urutkan berdasarkan grup
-    batchItems.sort((a, b) => a.group - b.group);
-
     let text = `Jadwal Kunjungan: ${date} - Batch ${batchId}\n\n`;
-    batchItems.forEach(d => {
-      text += `--- Group ${d.group} ---\n`;
+    batchItems.forEach((d, index) => {
+      text += `--- Rombongan ${index + 1} ---\n`;
       text += `PIC WA: ${d.pic_phone}\n`;
       text += `Email: ${d.pic_email || "-"}\n`;
       text += `Peserta (${d.participants.length} orang):\n`;
@@ -328,14 +297,14 @@ export default function AdminDashboard() {
                 
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="text-sm text-gray-500 font-semibold mb-1">Group {d.group}</p>
+                    <p className="text-sm text-gray-500 font-semibold mb-1">Rombongan {index + 1}</p>
                     <p className="font-bold text-lg">{d.pic_phone}</p>
                     {d.pic_email && <p className="text-xs text-blue-500 font-medium break-all">{d.pic_email}</p>}
                   </div>
                   <button
-                    onClick={() => copyGroupText(d)}
+                    onClick={() => copyRombonganText(d)}
                     className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-2.5 rounded-xl transition-colors shadow-sm"
-                    title="Salin data peserta di grup ini"
+                    title="Salin data peserta rombongan ini"
                   >
                     <FaCopy className="text-lg" />
                   </button>
