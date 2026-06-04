@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getRegistrations, createRegistration } from "../services/api";
+import { getRegistrations, createRegistration, createLog } from "../services/api";
 import { FaUsers, FaCalendarAlt, FaClock, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import Swal from "sweetalert2";
@@ -151,6 +151,17 @@ function RegistrationForm({ date, batch, used, refresh }) {
         })),
         createdAt: Date.now(),
       });
+      
+      try {
+        await createLog({
+          action: "CREATE",
+          actor: currentUser?.email || "Visitor",
+          target: `${date} Batch ${batch}`,
+          details: `User mendaftar rombongan dengan PIC ${picName} (${count} peserta)`
+        });
+      } catch(err) {
+        console.error("Gagal mencatat log", err);
+      }
       
       setSuccess(true);
       setPicName("");

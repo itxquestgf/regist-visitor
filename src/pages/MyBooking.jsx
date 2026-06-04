@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRegistrations, deleteRegistration } from "../services/api";
+import { getRegistrations, deleteRegistration, createLog } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
 import { FaTrash, FaArrowLeft, FaCalendarCheck } from "react-icons/fa";
@@ -40,6 +40,18 @@ export default function MyBooking() {
     
     try {
       await deleteRegistration(id);
+      
+      try {
+        await createLog({
+          action: "DELETE",
+          actor: currentUser?.email || "Visitor",
+          target: `Booking ID: ${id}`,
+          details: `User membatalkan booking`
+        });
+      } catch(err) {
+        console.error("Gagal mencatat log", err);
+      }
+
       alert("Pendaftaran berhasil dibatalkan.");
       loadMyBookings();
     } catch (e) {

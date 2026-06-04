@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRegistrations, deleteRegistration, createRegistration } from "../services/api";
+import { getRegistrations, deleteRegistration, createRegistration, createLog } from "../services/api";
 import { logout } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarDay, FaCircle, FaCopy, FaSync } from "react-icons/fa";
@@ -130,6 +130,18 @@ export default function AdminDashboard() {
     if (!confirm("Hapus data ini?")) return;
     try {
       await deleteRegistration(id);
+      
+      try {
+        await createLog({
+          action: "DELETE",
+          actor: "Admin",
+          target: `Booking ID: ${id}`,
+          details: `Admin menghapus data pendaftaran`
+        });
+      } catch(err) {
+        console.error("Gagal mencatat log", err);
+      }
+
       loadData();
     } catch (e) {
       alert("Error: " + e.message);
@@ -157,6 +169,18 @@ export default function AdminDashboard() {
         })),
         createdAt: Date.now(),
       });
+      
+      try {
+        await createLog({
+          action: "CREATE",
+          actor: "Admin",
+          target: `${addForm.date} Batch ${addForm.batch}`,
+          details: `Admin menambahkan manual rombongan PIC ${addForm.pic_name} (${addForm.count} peserta)`
+        });
+      } catch(err) {
+        console.error("Gagal mencatat log", err);
+      }
+
       alert("Data berhasil ditambahkan!");
       setShowAddModal(false);
       setAddForm({ date: "", batch: 1, pic_name: "", pic_phone: "", pic_email: "", count: 1 });
@@ -242,6 +266,9 @@ export default function AdminDashboard() {
           Admin Dashboard
         </h1>
         <div className="flex flex-wrap gap-2 sm:gap-4 w-full sm:w-auto">
+          <button onClick={() => navigate("/admin/log")} className="bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
+             Log Aktivitas
+          </button>
           <button onClick={() => setShowAddModal(true)} className="bg-green-600 hover:bg-green-500 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all flex-grow sm:flex-grow-0">
             + Tambah Manual
           </button>

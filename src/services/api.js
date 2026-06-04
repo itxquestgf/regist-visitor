@@ -24,3 +24,20 @@ export async function deleteRegistration(id) {
   await fetch(`${BASE_URL}/registrations/${id}`, { method: "DELETE", headers: HEADERS });
 }
 
+/* LOGS */
+export async function getLogs() {
+  const res = await fetch(`${BASE_URL}/logs`, { headers: HEADERS });
+  return res.json();
+}
+
+export async function createLog(data) {
+  const res = await fetch(`${BASE_URL}/logs`, {
+    method: "POST",
+    headers: HEADERS,
+    body: JSON.stringify({
+      ...data,
+      timestamp: new Date().toISOString()
+    })
+  });
+  return res.json();
+}
