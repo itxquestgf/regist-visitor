@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { ref, onValue, set, remove } from "firebase/database";
+import { ref, onValue, remove, update } from "firebase/database";
 import { db } from "../firebase";
 
 export default function AdminJadwal() {
   const [dates, setDates] = useState({});
-  const [newDate, setNewDate] = useState("");
+  const [bulkDates, setBulkDates] = useState("");
 
   useEffect(() => {
     const jadwalRef = ref(db, "jadwal");
@@ -13,14 +13,41 @@ export default function AdminJadwal() {
     });
   }, []);
 
-  function addDate() {
-    if (!newDate) {
-      alert("Pilih tanggal terlebih dahulu");
+  function processBulkDates() {
+    if (!bulkDates.trim()) {
+      alert("Masukkan data tanggal terlebih dahulu!");
       return;
     }
 
-    set(ref(db, `jadwal/${newDate}`), true);
-    setNewDate("");
+    const lines = bulkDates.split(/\n/);
+    const updates = {};
+    let count = 0;
+
+    lines.forEach(line => {
+      const d = line.trim();
+      // Validasi sederhana: pastikan tidak kosong
+      // Format yang disarankan: YYYY-MM-DD
+      if (d.length >= 8) {
+        // Hapus karakter whitespace tersembunyi jika ada (seperti carriage return \r dari excel)
+        const cleanDate = d.replace(/[\r\n\t]/g, '');
+        updates[cleanDate] = true;
+        count++;
+      }
+    });
+
+    if (count === 0) {
+      alert("Tidak ada tanggal valid yang ditemukan.");
+      return;
+    }
+
+    if (!confirm(`Tambahkan ${count} jadwal tanggal?`)) return;
+
+    update(ref(db, "jadwal"), updates).then(() => {
+      setBulkDates("");
+      alert(`${count} jadwal berhasil ditambahkan!`);
+    }).catch(err => {
+      alert("Error: " + err.message);
+    });
   }
 
   function deleteDate(date) {
@@ -34,67 +61,75 @@ export default function AdminJadwal() {
         Atur Jadwal Manual
       </h1>
 
-      {/* ADD DATE */}
+      {/* BULK ADD DATES (EXCEL PASTE) */}
       <div className="space-y-4 mb-10">
-        <div className="relative">
-          <input
-            type="date"
-            value={newDate}
-            onChange={e => setNewDate(e.target.value)}
+        <div className="bg-blue-900/50 p-4 rounded-xl border border-blue-800">
+          <p className="text-sm text-yellow-100 font-semibold mb-2">
+            💡 Tips: Anda bisa Copy baris/kolom dari Excel dan Paste langsung ke sini.
+          </p>
+          <p className="text-xs text-blue-200 mb-3">
+            Format yang disarankan: YYYY-MM-DD (contoh: 2025-12-30). Setiap baris akan dihitung sebagai 1 jadwal.
+          </p>
+          <textarea
+            rows={6}
+            value={bulkDates}
+            onChange={e => setBulkDates(e.target.value)}
+            placeholder="2025-12-30&#10;2025-12-31&#10;2026-01-01"
             className="
-              w-full p-3 pr-10 rounded
+              w-full p-3 rounded
               bg-blue-950 text-white
               border-2 border-yellow-400
-              placeholder-gray-300
+              placeholder-gray-500
               focus:outline-none
               focus:ring-2 focus:ring-yellow-400
-              date-yellow
             "
           />
 
-          {/* ICON KALENDER */}
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-400 pointer-events-none">
-            📅
-          </span>
+          <button
+            onClick={processBulkDates}
+            className="
+              w-full mt-3 bg-yellow-400 text-blue-950
+              font-bold py-3 rounded
+              hover:bg-yellow-300 transition shadow-lg
+            "
+          >
+            ➕ Tambahkan Jadwal Massal
+          </button>
         </div>
-
-        <button
-          onClick={addDate}
-          className="
-            w-full bg-yellow-400 text-blue-950
-            font-bold py-3 rounded
-            hover:bg-yellow-300 transition
-          "
-        >
-          ➕ Tambahkan Jadwal
-        </button>
       </div>
 
       {/* LIST DATE */}
+      <h2 className="text-xl font-bold text-white mb-4 border-b border-blue-800 pb-2">
+        Jadwal Tersedia
+      </h2>
+      
       {Object.keys(dates).length === 0 && (
-        <p className="text-gray-300">Belum ada jadwal</p>
+        <p className="text-gray-400 italic">Belum ada jadwal yang ditambahkan.</p>
       )}
 
-      {Object.keys(dates)
-        .sort()
-        .map(date => (
-          <div
-            key={date}
-            className="
-              bg-white text-blue-950
-              p-3 rounded mb-3
-              flex justify-between items-center
-            "
-          >
-            <span className="font-bold">{date}</span>
-            <button
-              onClick={() => deleteDate(date)}
-              className="text-red-600 font-bold"
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+        {Object.keys(dates)
+          .sort()
+          .map(date => (
+            <div
+              key={date}
+              className="
+                bg-white text-blue-950
+                p-4 rounded-xl shadow-md
+                flex justify-between items-center
+                border-l-4 border-yellow-400
+              "
             >
-              Hapus
-            </button>
-          </div>
-        ))}
+              <span className="font-bold font-mono text-lg">{date}</span>
+              <button
+                onClick={() => deleteDate(date)}
+                className="text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-red-50 rounded"
+              >
+                Hapus
+              </button>
+            </div>
+          ))}
+      </div>
     </div>
   );
 }

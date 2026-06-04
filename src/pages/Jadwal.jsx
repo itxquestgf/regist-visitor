@@ -4,6 +4,7 @@ import {
   FaWhatsapp, 
   FaClock, 
   FaCalendarAlt, 
+  FaCalendarDay,
   FaCheckCircle, 
   FaTimesCircle,
   FaUsers,
@@ -32,6 +33,7 @@ export default function Jadwal() {
 
   const [dates, setDates] = useState([]);
   const [visits, setVisits] = useState({});
+  const [selectedDate, setSelectedDate] = useState("ALL");
 
   /* =======================
      LOAD JADWAL MANUAL
@@ -41,6 +43,8 @@ export default function Jadwal() {
 
     return onValue(jadwalRef, snap => {
       const val = snap.val() || {};
+      
+      // Kembalikan seperti semula, tampilkan semua tanggal tanpa difilter
       setDates(Object.keys(val).sort());
     });
   }, []);
@@ -57,9 +61,9 @@ export default function Jadwal() {
   }, []);
 
   /* =======================
-     CEK BATCH FULL
+     CEK BATCH AVAILABILITY
   ======================= */
-  function isBatchFull(date, batchId) {
+  function getBatchAvailability(date, batchId) {
     let count = 0;
 
     Object.values(visits).forEach(d => {
@@ -68,14 +72,22 @@ export default function Jadwal() {
       }
     });
 
-    return count >= 18;
+    const capacity = 54; // 3 grup x 18 orang
+    const remaining = capacity - count;
+    
+    return {
+      used: count,
+      capacity,
+      remaining: remaining > 0 ? remaining : 0,
+      full: count >= capacity
+    };
   }
 
   /* =======================
      CEK HARI FULL
   ======================= */
   function isDayFull(date) {
-    return BATCHES.every(b => isBatchFull(date, b.id));
+    return BATCHES.every(b => getBatchAvailability(date, b.id).full);
   }
 
   /* =======================
@@ -98,34 +110,6 @@ export default function Jadwal() {
         </div>
       </div>
 
-      {/* INFO ADMIN */}
-      <div className="max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-yellow-100 text-blue-950 p-5 sm:p-6 rounded-3xl shadow-2xl border-2 border-yellow-200 mb-8 sm:mb-10">
-        <div className="flex gap-4 items-start">
-          <div className="p-3 bg-green-100 rounded-2xl shrink-0">
-            <FaWhatsapp className="text-green-600" size={32} />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <FaExclamationTriangle className="text-yellow-600" />
-              <p className="font-bold text-lg">Butuh Bantuan?</p>
-            </div>
-            <p className="text-sm sm:text-base text-blue-800 mb-3">
-              Jika jadwal penuh atau batch tidak bisa dipilih,
-              silakan hubungi admin untuk mendapatkan bantuan.
-            </p>
-            <a
-              href={`https://wa.me/${ADMIN_WA}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl"
-            >
-              <FaWhatsapp />
-              <span>Hubungi Admin via WhatsApp</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
       {/* JADWAL */}
       {dates.length === 0 ? (
         <div className="max-w-md mx-auto text-center py-12">
@@ -140,8 +124,65 @@ export default function Jadwal() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-6 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
-          {dates.map(date => {
+        <div className="max-w-6xl mx-auto">
+          {/* FILTER TANGGAL */}
+          <div className="mb-8">
+            <h2 className="text-sm font-semibold text-blue-200 mb-3 uppercase tracking-wider text-center sm:text-left">
+              Filter Tanggal Kunjungan
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide justify-start sm:justify-center lg:justify-start">
+              <button
+                onClick={() => setSelectedDate("ALL")}
+                className={`
+                  shrink-0 px-6 py-3 rounded-xl font-bold transition-all
+                  ${selectedDate === "ALL" 
+                    ? "bg-yellow-400 text-blue-950 shadow-lg scale-105" 
+                    : "bg-white/10 text-blue-100 hover:bg-white/20 border border-white/20"
+                  }
+                `}
+              >
+                Semua Tanggal
+              </button>
+              
+              {dates.map(date => {
+                // Hitung jumlah pendaftar di tanggal ini
+                let count = 0;
+                Object.values(visits).forEach(d => {
+                  if (d.date === date) count++;
+                });
+                
+                const hasData = count > 0;
+                
+                return (
+                  <button
+                    key={date}
+                    onClick={() => setSelectedDate(date)}
+                    className={`
+                      shrink-0 px-5 py-3 rounded-xl font-bold transition-all relative
+                      flex items-center gap-2
+                      ${selectedDate === date 
+                        ? "bg-yellow-400 text-blue-950 shadow-lg scale-105" 
+                        : "bg-white/10 text-blue-100 hover:bg-white/20 border border-white/20"
+                      }
+                    `}
+                  >
+                    <FaCalendarDay className={selectedDate === date ? "text-blue-900" : "text-yellow-300"} />
+                    <span>{date}</span>
+                    {hasData && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-black px-2 py-1 rounded-full shadow-md animate-pulse border-2 border-blue-950">
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {dates
+              .filter(date => selectedDate === "ALL" || date === selectedDate)
+              .map(date => {
             const dayFull = isDayFull(date);
 
             return (
@@ -166,7 +207,8 @@ export default function Jadwal() {
                 {/* BATCHES */}
                 <div className="space-y-3">
                   {BATCHES.map(b => {
-                    const full = isBatchFull(date, b.id);
+                    const status = getBatchAvailability(date, b.id);
+                    const full = status.full;
 
                     return (
                       <button
@@ -198,12 +240,14 @@ export default function Jadwal() {
                           </div>
                           <div>
                             <p className="font-bold text-base">Batch {b.id}</p>
-                            <p className={`text-xs flex items-center gap-1.5 ${
+                            <div className={`text-xs flex flex-col gap-0.5 mt-0.5 ${
                               full ? "text-gray-500" : "text-blue-600"
                             }`}>
-                              <FaClock className="text-xs" /> 
-                              <span>{b.time}</span>
-                            </p>
+                              <span className="flex items-center gap-1.5"><FaClock className="text-xs" /> {b.time}</span>
+                              <span className={`font-semibold ${full ? "" : "text-green-600"}`}>
+                                Sisa {status.remaining} slot peserta
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -226,6 +270,7 @@ export default function Jadwal() {
             );
           })}
         </div>
+      </div>
       )}
 
       {/* FLOATING WA */}
