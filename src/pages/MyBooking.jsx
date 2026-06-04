@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getRegistrations, deleteRegistration } from "../services/api";
-import { useAuth } from "../services/auth";
+import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
 import { FaTrash, FaArrowLeft, FaCalendarCheck } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
