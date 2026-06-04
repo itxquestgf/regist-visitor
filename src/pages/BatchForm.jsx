@@ -75,7 +75,7 @@ function GroupForm({ date, batch, group, used }) {
   const remaining = capacity - used;
 
   const [count, setCount] = useState(1);
-  const [names, setNames] = useState([""]);
+  const [picName, setPicName] = useState("");
   const [phone, setPhone] = useState("");
 
   // FEEDBACK STATE
@@ -100,8 +100,8 @@ function GroupForm({ date, batch, group, used }) {
     setError("");
     setSuccess(false);
 
-    if (names.length !== count || names.some(n => !n.trim())) {
-      setError("Nama peserta belum lengkap");
+    if (!picName.trim()) {
+      setError("Nama PIC (Pemimpin) wajib diisi");
       return;
     }
 
@@ -116,15 +116,15 @@ function GroupForm({ date, batch, group, used }) {
       group,
       count,
       pic_phone: phone,
-      participants: names.map((n, i) => ({
-        name: n,
+      participants: Array.from({ length: count }).map((_, i) => ({
+        name: i === 0 ? picName : `Anggota ${i}`,
         is_pic: i === 0,
       })),
       createdAt: Date.now(),
     });
 
     setSuccess(true);
-    setNames([""]);
+    setPicName("");
     setPhone("");
     setCount(1);
   }
@@ -195,9 +195,7 @@ function GroupForm({ date, batch, group, used }) {
           disabled={isFull}
           value={count}
           onChange={e => {
-            const v = Number(e.target.value);
-            setCount(v);
-            setNames(Array(v).fill(""));
+            setCount(Number(e.target.value));
           }}
           className={`
             w-full p-4 rounded-xl border-2 border-blue-200
@@ -219,37 +217,29 @@ function GroupForm({ date, batch, group, used }) {
         </select>
       </div>
 
-      {/* NAMA PESERTA */}
+      {/* NAMA PIC */}
       <div className="space-y-3">
         <label className="block text-sm font-semibold text-blue-700 mb-2">
-          Data Peserta
+          Nama Lengkap PIC (Pemimpin)
         </label>
-        {names.map((n, i) => (
-          <div key={i} className="relative">
-            <input
-              disabled={isFull}
-              value={n}
-              placeholder={isFull ? "-" : (i === 0 ? "Nama PIC (Pemimpin)" : `Nama Peserta ${i + 1}`)}
-              onChange={e => {
-                const copy = [...names];
-                copy[i] = e.target.value;
-                setNames(copy);
-              }}
-              className={`
-                w-full p-4 rounded-xl border-2 border-blue-200
-                bg-white text-blue-950 placeholder-blue-400
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                transition-all
-                ${isFull ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'hover:border-blue-300'}
-              `}
-            />
-            {i === 0 && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
-                PIC
-              </span>
-            )}
-          </div>
-        ))}
+        <div className="relative">
+          <input
+            disabled={isFull}
+            value={picName}
+            placeholder={isFull ? "-" : "Masukkan nama ketua rombongan"}
+            onChange={e => setPicName(e.target.value)}
+            className={`
+              w-full p-4 rounded-xl border-2 border-blue-200
+              bg-white text-blue-950 placeholder-blue-400
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+              transition-all
+              ${isFull ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'hover:border-blue-300'}
+            `}
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
+            PIC
+          </span>
+        </div>
       </div>
 
       {/* WA */}

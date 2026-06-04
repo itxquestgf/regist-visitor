@@ -242,6 +242,9 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold text-yellow-300">
                 {date}
               </h2>
+              <span className="ml-2 bg-yellow-400 text-blue-950 px-3 py-1 rounded-full text-xs font-black shadow-sm">
+                {items.length} Rombongan (PIC)
+              </span>
             </div>
 
             <button
@@ -253,7 +256,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map(d => (
+            {items.map((d, index) => (
               <div
                 key={d.id}
                 className="bg-white text-blue-950 p-5 rounded-2xl shadow-xl border-l-4 border-yellow-400 relative overflow-hidden group"
@@ -271,10 +274,10 @@ export default function AdminDashboard() {
                   <p className="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wide">Daftar Peserta ({d.participants.length})</p>
                   <ul className="space-y-1">
                     {d.participants.map((p, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm font-medium">
-                        <FaCircle className="text-[6px] text-blue-400" />
-                        <span className={i === 0 ? "font-bold text-blue-900" : ""}>
-                          {p.name} {i === 0 && "(PIC)"}
+                      <li key={i} className="flex items-start gap-2 text-sm font-medium">
+                        <span className="font-bold text-blue-500 w-4 shrink-0">{i + 1}.</span>
+                        <span className={i === 0 ? "font-bold text-blue-900" : "text-gray-700"}>
+                          {p.name} {i === 0 && <span className="text-blue-500 ml-1">(PIC)</span>}
                         </span>
                       </li>
                     ))}
