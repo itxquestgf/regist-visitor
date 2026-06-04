@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ref, onValue, remove, update } from "firebase/database";
-import { db } from "../firebase";
+import { getJadwal, addJadwal, deleteJadwal } from "../services/api";
 
 export default function AdminJadwal() {
   const [dates, setDates] = useState({});
@@ -15,53 +14,72 @@ export default function AdminJadwal() {
     }
   }, [navigate]);
 
+  async function loadData() {
+    try {
+      const res = await getJadwal();
+      const arr = Array.isArray(res) ? res : [];
+      const dMap = {};
+      arr.forEach(d => {
+        dMap[d.id] = true;
+      });
+      setDates(dMap);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   useEffect(() => {
-    const jadwalRef = ref(db, "jadwal");
-    return onValue(jadwalRef, snap => {
-      setDates(snap.val() || {});
-    });
+    loadData();
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  function processBulkDates() {
+  async function processBulkDates() {
     if (!bulkDates.trim()) {
       alert("Masukkan data tanggal terlebih dahulu!");
       return;
     }
 
     const lines = bulkDates.split(/\n/);
-    const updates = {};
-    let count = 0;
-
+    const validDates = [];
+    
     lines.forEach(line => {
       const d = line.trim();
-      // Validasi sederhana: pastikan tidak kosong
-      // Format yang disarankan: YYYY-MM-DD
       if (d.length >= 8) {
-        // Hapus karakter whitespace tersembunyi jika ada (seperti carriage return \r dari excel)
         const cleanDate = d.replace(/[\r\n\t]/g, '');
-        updates[cleanDate] = true;
-        count++;
+        validDates.push(cleanDate);
       }
     });
 
-    if (count === 0) {
+    if (validDates.length === 0) {
       alert("Tidak ada tanggal valid yang ditemukan.");
       return;
     }
 
-    if (!confirm(`Tambahkan ${count} jadwal tanggal?`)) return;
+    if (!confirm(`Tambahkan ${validDates.length} jadwal tanggal?`)) return;
 
-    update(ref(db, "jadwal"), updates).then(() => {
+    try {
+      // json-server tak mendukung bulk POST di default setup, kita loop saja.
+      for (const d of validDates) {
+        await addJadwal(d);
+      }
       setBulkDates("");
-      alert(`${count} jadwal berhasil ditambahkan!`);
-    }).catch(err => {
+      alert(`${validDates.length} jadwal berhasil ditambahkan!`);
+      loadData();
+    } catch (err) {
       alert("Error: " + err.message);
-    });
+    }
   }
 
-  function deleteDate(date) {
+  async function deleteDate(date) {
     if (!confirm(`Hapus jadwal ${date}?`)) return;
-    remove(ref(db, `jadwal/${date}`));
+    try {
+      await deleteJadwal(date);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Error: " + err.message);
+    }
   }
 
   return (

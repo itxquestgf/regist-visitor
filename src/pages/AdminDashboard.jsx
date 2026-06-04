@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { ref, onValue, remove } from "firebase/database";
-import { db } from "../firebase";
+import { getRegistrations, getJadwal, deleteRegistration } from "../services/api";
 import { logout } from "../services/auth";
 import { useNavigate } from "react-router-dom";
-import { FaCalendarDay, FaCircle } from "react-icons/fa";
+import { FaCalendarDay, FaCircle, FaCopy, FaSync } from "react-icons/fa";
 
 /* =======================
    EXPORT CSV (HORIZONTAL)
@@ -83,43 +82,46 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
-  /* ===== LOAD REALTIME ===== */
-  useEffect(() => {
-    const regRef = ref(db, "registrations");
+  /* ===== FETCH DATA FROM API ===== */
+  async function loadData() {
+    try {
+      const regList = await getRegistrations();
+      const jadwalList = await getJadwal();
 
-    return onValue(regRef, snap => {
-      const val = snap.val() || {};
-
-      const arr = Object.entries(val).map(([id, v]) => ({
-        id,
-        ...v,
-        participants: Array.isArray(v.participants)
-          ? v.participants
-          : Object.values(v.participants || {})
-      }));
-
+      const arr = Array.isArray(regList) ? regList : [];
       arr.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         if (a.batch !== b.batch) return a.batch - b.batch;
         return a.group - b.group;
       });
-
       setData(arr);
-    });
-  }, []);
 
-  /* ===== LOAD JADWAL ===== */
+      const jList = Array.isArray(jadwalList) ? jadwalList : [];
+      setJadwalDates(jList.map(j => j.id).sort());
+    } catch (e) {
+      console.error(e);
+      alert("Gagal memuat data dari server lokal.");
+    }
+  }
+
   useEffect(() => {
-    const jadwalRef = ref(db, "jadwal");
-    return onValue(jadwalRef, snap => {
-      const val = snap.val() || {};
-      setJadwalDates(Object.keys(val).sort());
-    });
+    loadData();
+    
+    // Auto-refresh setiap 5 detik untuk mensimulasikan realtime ringan
+    const interval = setInterval(() => {
+      loadData();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  function handleDelete(id) {
+  async function handleDelete(id) {
     if (!confirm("Hapus data ini?")) return;
-    remove(ref(db, `registrations/${id}`));
+    try {
+      await deleteRegistration(id);
+      loadData();
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
   }
 
   function handleLogout() {
@@ -160,15 +162,51 @@ export default function AdminDashboard() {
     return acc;
   }, {});
 
+  /* ===== COPY FUNCTIONS ===== */
+  function copyGroupText(d) {
+    let text = `Tanggal: ${d.date}\nBatch: ${d.batch}\nGroup: ${d.group}\nPIC WA: ${d.pic_phone}\n\nPeserta:\n`;
+    d.participants.forEach((p, i) => {
+      text += `${i + 1}. ${p.name} ${i === 0 ? "(PIC)" : ""}\n`;
+    });
+    navigator.clipboard.writeText(text);
+    alert(`Data Rombongan Group ${d.group} berhasil disalin!`);
+  }
+
+  function copyBatchText(date, batchId, items) {
+    const batchItems = items.filter(d => d.batch === batchId);
+    if (batchItems.length === 0) return alert("Tidak ada data di batch ini");
+
+    // Urutkan berdasarkan grup
+    batchItems.sort((a, b) => a.group - b.group);
+
+    let text = `Jadwal Kunjungan: ${date} - Batch ${batchId}\n\n`;
+    batchItems.forEach(d => {
+      text += `--- Group ${d.group} ---\n`;
+      text += `PIC WA: ${d.pic_phone}\n`;
+      text += `Peserta (${d.participants.length} orang):\n`;
+      d.participants.forEach((p, i) => {
+        text += `${i + 1}. ${p.name} ${i === 0 ? "(PIC)" : ""}\n`;
+      });
+      text += `\n`;
+    });
+    navigator.clipboard.writeText(text);
+    alert(`Data seluruh Batch ${batchId} berhasil disalin!`);
+  }
+
   return (
-    <div className="min-h-screen bg-blue-950 p-6 text-white">
-      <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold text-yellow-300">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950 p-4 sm:p-8 text-white">
+      <div className="flex items-center justify-between mb-6 bg-white/5 p-4 rounded-2xl border border-white/10">
+        <h1 className="text-lg sm:text-2xl font-bold text-yellow-300">
           Admin Dashboard
         </h1>
-        <button onClick={handleLogout} className="underline text-sm">
-          Logout
-        </button>
+        <div className="flex gap-2 sm:gap-4">
+          <button onClick={() => navigate("/admin/jadwal")} className="bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all">
+            Atur Jadwal
+          </button>
+          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all">
+            Logout
+          </button>
+        </div>
       </div>
 
       <input
@@ -242,24 +280,39 @@ export default function AdminDashboard() {
       )}
 
       {Object.entries(groupedFiltered).map(([date, items]) => (
-        <div key={date} className="mb-10 bg-white/5 p-6 rounded-2xl border border-white/10">
-          <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-            <div className="flex items-center gap-3">
-              <FaCalendarDay className="text-yellow-400 text-xl" />
-              <h2 className="text-2xl font-bold text-yellow-300">
+        <div key={date} className="mb-8 sm:mb-10 bg-white/5 p-4 sm:p-6 rounded-2xl border border-white/10">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 border-b border-white/10 pb-4">
+            <div className="flex items-center flex-wrap gap-2 sm:gap-3">
+              <FaCalendarDay className="text-yellow-400 text-lg sm:text-xl" />
+              <h2 className="text-xl sm:text-2xl font-bold text-yellow-300">
                 {date}
               </h2>
-              <span className="ml-2 bg-yellow-400 text-blue-950 px-3 py-1 rounded-full text-xs font-black shadow-sm">
+              <span className="bg-yellow-400 text-blue-950 px-3 py-1 rounded-full text-xs font-black shadow-sm">
                 {items.length} Rombongan (PIC)
               </span>
             </div>
 
-            <button
-              onClick={() => downloadByDate(date, items)}
-              className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-blue-950 px-5 py-2 rounded-xl text-sm font-black shadow-lg transition-transform hover:scale-105 active:scale-95"
-            >
-              📥 Unduh Excel
-            </button>
+            <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide bg-white/10 p-1.5 rounded-xl border border-white/20 items-center px-3">
+                <span className="text-xs font-bold text-blue-200 whitespace-nowrap">Salin Batch:</span>
+                {[...new Set(items.map(i => i.batch))].sort().map(b => (
+                  <button
+                    key={b}
+                    onClick={() => copyBatchText(date, b, items)}
+                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all shrink-0"
+                    title={`Salin semua grup di Batch ${b}`}
+                  >
+                    <FaCopy /> B{b}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => downloadByDate(date, items)}
+                className="w-full sm:w-auto bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-blue-950 px-5 py-3 sm:py-2 rounded-xl text-sm font-black shadow-lg transition-transform hover:scale-105 active:scale-95 whitespace-nowrap"
+              >
+                📥 Unduh Excel
+              </button>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -272,9 +325,18 @@ export default function AdminDashboard() {
                   Batch {d.batch}
                 </div>
                 
-                <div className="mb-3">
-                  <p className="text-sm text-gray-500 font-semibold mb-1">Group {d.group}</p>
-                  <p className="font-bold text-lg">{d.pic_phone}</p>
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="text-sm text-gray-500 font-semibold mb-1">Group {d.group}</p>
+                    <p className="font-bold text-lg">{d.pic_phone}</p>
+                  </div>
+                  <button
+                    onClick={() => copyGroupText(d)}
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-2.5 rounded-xl transition-colors shadow-sm"
+                    title="Salin data peserta di grup ini"
+                  >
+                    <FaCopy className="text-lg" />
+                  </button>
                 </div>
 
                 <div className="bg-blue-50 p-3 rounded-xl mb-4">

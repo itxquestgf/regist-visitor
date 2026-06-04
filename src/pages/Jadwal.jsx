@@ -12,8 +12,7 @@ import {
   FaArrowRight
 } from "react-icons/fa";
 import { useEffect, useState } from "react";
-import { ref, onValue } from "firebase/database";
-import { db } from "../firebase";
+import { getJadwal, getRegistrations } from "../services/api";
 
 const ADMIN_WA = "628131073719"; // GANTI NO ADMIN
 
@@ -32,32 +31,30 @@ export default function Jadwal() {
   const navigate = useNavigate();
 
   const [dates, setDates] = useState([]);
-  const [visits, setVisits] = useState({});
+  const [visits, setVisits] = useState([]);
   const [selectedDate, setSelectedDate] = useState("ALL");
 
   /* =======================
-     LOAD JADWAL MANUAL
+     LOAD DATA FROM API
   ======================= */
+  async function loadData() {
+    try {
+      const jList = await getJadwal();
+      const jArr = Array.isArray(jList) ? jList : [];
+      setDates(jArr.map(j => j.id).sort());
+
+      const rList = await getRegistrations();
+      const rArr = Array.isArray(rList) ? rList : [];
+      setVisits(rArr);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   useEffect(() => {
-    const jadwalRef = ref(db, "jadwal");
-
-    return onValue(jadwalRef, snap => {
-      const val = snap.val() || {};
-      
-      // Kembalikan seperti semula, tampilkan semua tanggal tanpa difilter
-      setDates(Object.keys(val).sort());
-    });
-  }, []);
-
-  /* =======================
-     LOAD REGISTRATIONS
-  ======================= */
-  useEffect(() => {
-    const visitsRef = ref(db, "registrations");
-
-    return onValue(visitsRef, snapshot => {
-      setVisits(snapshot.val() || {});
-    });
+    loadData();
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   /* =======================
@@ -66,7 +63,7 @@ export default function Jadwal() {
   function getBatchAvailability(date, batchId) {
     let count = 0;
 
-    Object.values(visits).forEach(d => {
+    visits.forEach(d => {
       if (d.date === date && d.batch === batchId) {
         count += Number(d.count || 0);
       }

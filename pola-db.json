@@ -2,20 +2,11 @@
   "admins": {
     "1234": true
   },
-
-  "registrations": {},
-
+  "jadwal": [],
+  "registrations": [],
   "settings": {
-    "jadwal": {
-      "mode": "manual",
-      "dates": {
-        "2025-12-30": true,
-        "2025-12-31": true,
-        "2026-01-01": false
-      }
-    }
+    "mode": "manual"
   },
-
   "meta": {
     "createdAt": 1766895812993,
     "app": "visitor-registration",

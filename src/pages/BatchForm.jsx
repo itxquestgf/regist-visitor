@@ -1,30 +1,33 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ref, push, onValue, off } from "firebase/database";
-import { db } from "../firebase";
+import { getRegistrations, createRegistration } from "../services/api";
 import { FaUsers, FaCalendarAlt, FaClock, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 
 export default function BatchForm() {
   const { date, batch } = useParams();
   const [used, setUsed] = useState({ 1: 0, 2: 0, 3: 0 });
 
-  useEffect(() => {
-    const regRef = ref(db, "registrations");
-
-    const unsub = onValue(regRef, snap => {
-      const all = snap.val() || {};
+  async function loadData() {
+    try {
+      const all = await getRegistrations();
+      const arr = Array.isArray(all) ? all : [];
+      
       const temp = { 1: 0, 2: 0, 3: 0 };
-
-      Object.values(all).forEach(d => {
+      arr.forEach(d => {
         if (d.date === date && d.batch === Number(batch)) {
           temp[d.group] += d.count;
         }
       });
-
       setUsed(temp);
-    });
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
-    return () => off(regRef);
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, [date, batch]);
 
   return (
@@ -60,6 +63,7 @@ export default function BatchForm() {
             batch={Number(batch)}
             group={group}
             used={used[group]}
+            refresh={loadData}
           />
         ))}
       </div>
@@ -70,7 +74,7 @@ export default function BatchForm() {
 /* =========================
    GROUP FORM
 ========================= */
-function GroupForm({ date, batch, group, used }) {
+function GroupForm({ date, batch, group, used, refresh }) {
   const capacity = 18;
   const remaining = capacity - used;
 
@@ -96,7 +100,7 @@ function GroupForm({ date, batch, group, used }) {
 
   const isFull = remaining <= 0;
 
-  function submit() {
+  async function submit() {
     setError("");
     setSuccess(false);
 
@@ -110,23 +114,29 @@ function GroupForm({ date, batch, group, used }) {
       return;
     }
 
-    push(ref(db, "registrations"), {
-      date,
-      batch,
-      group,
-      count,
-      pic_phone: phone,
-      participants: Array.from({ length: count }).map((_, i) => ({
-        name: i === 0 ? picName : `Anggota ${i}`,
-        is_pic: i === 0,
-      })),
-      createdAt: Date.now(),
-    });
+    try {
+      await createRegistration({
+        date,
+        batch: Number(batch),
+        group,
+        count,
+        pic_phone: phone,
+        participants: Array.from({ length: count }).map((_, i) => ({
+          name: i === 0 ? picName : `Anggota ${i}`,
+          is_pic: i === 0,
+        })),
+        createdAt: Date.now(),
+      });
+      
+      setSuccess(true);
+      setPicName("");
+      setPhone("");
+      setCount(1);
+      refresh();
+    } catch (e) {
+      setError("Gagal menyimpan data: " + e.message);
+    }
 
-    setSuccess(true);
-    setPicName("");
-    setPhone("");
-    setCount(1);
   }
 
   return (

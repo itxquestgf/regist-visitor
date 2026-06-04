@@ -1,12 +1,13 @@
-const BASE_URL = "https://cody-chronographic-tobi.ngrok-free.dev/api/visitor/registrations";
+const BASE_URL = "http://localhost:4000";
 
-export async function getAll() {
-  const res = await fetch(BASE_URL);
+/* REGISTRATIONS */
+export async function getRegistrations() {
+  const res = await fetch(`${BASE_URL}/registrations`);
   return res.json();
 }
 
-export async function create(data) {
-  const res = await fetch(BASE_URL, {
+export async function createRegistration(data) {
+  const res = await fetch(`${BASE_URL}/registrations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -14,6 +15,25 @@ export async function create(data) {
   return res.json();
 }
 
-export async function removeById(id) {
-  await fetch(`${BASE_URL}/${id}`, { method: "DELETE" });
+export async function deleteRegistration(id) {
+  await fetch(`${BASE_URL}/registrations/${id}`, { method: "DELETE" });
+}
+
+/* JADWAL */
+export async function getJadwal() {
+  const res = await fetch(`${BASE_URL}/jadwal`);
+  return res.json();
+}
+
+export async function addJadwal(dateStr) {
+  const res = await fetch(`${BASE_URL}/jadwal`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: dateStr, date: dateStr })
+  });
+  return res.json();
+}
+
+export async function deleteJadwal(dateStr) {
+  await fetch(`${BASE_URL}/jadwal/${dateStr}`, { method: "DELETE" });
 }
